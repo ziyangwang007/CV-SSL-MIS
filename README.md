@@ -7,7 +7,7 @@ Some important required packages include:
 * [Pytorch][torch_link] version >=0.4.1.
 * TensorBoardX
 * Python == 3.6 
-* Efficientnet-Pytorch `pip install efficientnet_pytorch`
+* Efficientnet-Pytorch
 * Some basic python packages such as Numpy, Scikit-image, SimpleITK, Scipy ......
 
 
@@ -20,6 +20,10 @@ cd CV-SSL-MIS
 ```
 2. Download the processed data and put the data in `../data/BraTS2019` or `../data/ACDC`.
 
+```
+TBC where to download
+```
+
 3. Train the model
 ```
 cd code
@@ -31,9 +35,7 @@ python train_XXXXX.py
 python test_XXXXX.py
 ```
 
-## Data
 
-TBC
 
 ## References
 This code is originally developed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), and please consider citing the following works, if you use in your research/projects:
