@@ -21,9 +21,9 @@ cd CV-SSL-MIS
 2. Download the processed data and put the data in `../data/BraTS2019` or `../data/ACDC`. In this project, we use ACDC for 2D purpose, and BraTS for 3D purpose. You can download the dataset with the list of labeled training, unlabeled training, validation, and testing slices as following:
 
 
-		ACDC from [Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc6xQ/view?usp=share_link).
+ACDC from [Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc6xQ/view?usp=share_link).
 
-		BraTS from [Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc6xQ/view?usp=share_link).
+BraTS from [Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc6xQ/view?usp=share_link).
 
 
 3. Train the model
