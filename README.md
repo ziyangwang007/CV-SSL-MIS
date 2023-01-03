@@ -86,4 +86,4 @@ This code is originally developed from [SSL4MIS](https://github.com/HiLab-git/SS
 
 ## Acknowledgement
 
-Part of the code is adapted from open-source codebase and original implementations of algorithms: [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [segmentatic_segmentation.pytorch](https://github.com/qubvel/segmentation_models.pytorch).
+Part of the code is adapted from open-source codebase and original implementations of algorithms: [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch).
