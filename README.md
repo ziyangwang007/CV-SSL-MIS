@@ -3,10 +3,9 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 
 ## Requirements
-Some important required packages include:
+This code is originally developed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), some important required packages include:
 * [Pytorch][torch_link] version >=0.4.1.
 * TensorBoardX
-* Python == 3.6 
 * Efficientnet-Pytorch
 * Some basic python packages such as Numpy, Scikit-image, SimpleITK, Scipy ......
 
@@ -29,8 +28,9 @@ BraTS from [Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc
 3. Train the model
 ```
 cd code
-python train_XXXXX.py
+python train_XXX.py --root_path ../data/XXX --exp ACDC/XXX --model unet -max_iterations 30000 -batch_size 24 --base_lr 0.001 --num_classes 4 --labeled_num 7
 ```
+We have over <b>12</b> semi-supervised learning frameworks with over <b>5</b> segmentation backbones available.
 
 4. Test the model
 ```
@@ -40,7 +40,7 @@ python test_XXXXX.py
 
 
 ## References
-This code is originally developed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), and please consider citing the following works, if you use in your research/projects:
+Please consider citing the following works, if you use in your research/projects:
 
 	@misc{ssl4mis2020,
 	  title={{SSL4MIS}},
