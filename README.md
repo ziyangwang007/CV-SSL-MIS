@@ -39,13 +39,16 @@ python test_XXXXX.py
 
 
 ## References
-Please consider citing the following works, if you use in your research/projects:
 
-	@misc{CVSSLMIS2022,
-	  title={{CVSSLMIS}},
-	  author={Wang, Ziyang},
-	  howpublished={\url{https://github.com/ziyangwang007/CV-SSL-MIS}},
-	  year={2022}}
+This code is mainly borrowed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS) which provides many baseline Semi-Supervised Learning for Medical Image Segmentation methods and related papers.
+
+	@misc{ssl4mis2020,
+	  title={{SSL4MIS}},
+	  author={Luo, Xiangde},
+	  howpublished={\url{https://github.com/HiLab-git/SSL4MIS}},
+	  year={2020}}
+
+Please consider citing the following works, if you use in your research/projects:
 
 	@inproceedings{wang2022computationally,
 	  title={Computationally-efficient vision transformer for medical image semantic segmentation via dual pseudo-label supervision},
@@ -77,16 +80,8 @@ Please consider citing the following works, if you use in your research/projects
 	TBC
 
 
-The main part of code is originally from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS)
-
-	@misc{ssl4mis2020,
-	  title={{SSL4MIS}},
-	  author={Luo, Xiangde},
-	  howpublished={\url{https://github.com/HiLab-git/SSL4MIS}},
-	  year={2020}}
-
 
 
 ## Acknowledgement
 
-A part of the code is adapted from open-source codebase and original implementations of algorithms: , [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT).
+[SSL4MIS](https://github.com/HiLab-git/SSL4MIS), [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT).
