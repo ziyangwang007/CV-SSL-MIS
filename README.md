@@ -3,7 +3,6 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 
 ## Requirements
-This code is originally developed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), some important required packages include:
 * [Pytorch]
 * TensorBoardX
 * Efficientnet-Pytorch
@@ -42,12 +41,6 @@ python test_XXXXX.py
 ## References
 Please consider citing the following works, if you use in your research/projects:
 
-	@misc{ssl4mis2020,
-	  title={{SSL4MIS}},
-	  author={Luo, Xiangde},
-	  howpublished={\url{https://github.com/HiLab-git/SSL4MIS}},
-	  year={2020}}
-
 	@misc{CVSSLMIS2022,
 	  title={{CVSSLMIS}},
 	  author={Wang, Ziyang},
@@ -84,6 +77,16 @@ Please consider citing the following works, if you use in your research/projects
 	TBC
 
 
+The main part of code is originally from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS)
+
+	@misc{ssl4mis2020,
+	  title={{SSL4MIS}},
+	  author={Luo, Xiangde},
+	  howpublished={\url{https://github.com/HiLab-git/SSL4MIS}},
+	  year={2020}}
+
+
+
 ## Acknowledgement
 
-Part of the code is adapted from open-source codebase and original implementations of algorithms: [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch).
+A part of the code is adapted from open-source codebase and original implementations of algorithms: , [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT).
