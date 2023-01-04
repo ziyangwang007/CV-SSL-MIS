@@ -4,7 +4,7 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 ## Requirements
 This code is originally developed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), some important required packages include:
-* [Pytorch][torch_link] version >=0.4.1.
+* [Pytorch]
 * TensorBoardX
 * Efficientnet-Pytorch
 * Some basic python packages such as Numpy, Scikit-image, SimpleITK, Scipy ......
@@ -50,7 +50,7 @@ Please consider citing the following works, if you use in your research/projects
 
 	@misc{CVSSLMIS2022,
 	  title={{CVSSLMIS}},
-	  author={Luo, Xiangde},
+	  author={Wang, Ziyang},
 	  howpublished={\url{https://github.com/ziyangwang007/CV-SSL-MIS}},
 	  year={2022}}
 
