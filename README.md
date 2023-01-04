@@ -29,7 +29,6 @@ BraTS from [Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc
 cd code
 python train_XXX.py --root_path ../data/XXX --exp ACDC/XXX --model unet -max_iterations 30000 -batch_size 24 --base_lr 0.001 --num_classes 4 --labeled_num 7
 ```
-We have over <b>12</b> semi-supervised learning frameworks with over <b>5</b> segmentation backbones available.
 
 4. Test the model
 ```
@@ -39,14 +38,6 @@ python test_XXXXX.py
 
 
 ## References
-
-This code is mainly borrowed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS) which provides many baseline Semi-Supervised Learning for Medical Image Segmentation methods and related papers.
-
-	@misc{ssl4mis2020,
-	  title={{SSL4MIS}},
-	  author={Luo, Xiangde},
-	  howpublished={\url{https://github.com/HiLab-git/SSL4MIS}},
-	  year={2020}}
 
 Please consider citing the following works, if you use in your research/projects:
 
@@ -81,7 +72,16 @@ Please consider citing the following works, if you use in your research/projects
 
 
 
-
 ## Acknowledgement
 
-[SSL4MIS](https://github.com/HiLab-git/SSL4MIS), [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT).
+
+This code is mainly borrowed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS).
+
+	@misc{ssl4mis2020,
+	  title={{SSL4MIS}},
+	  author={Luo, Xiangde},
+	  howpublished={\url{https://github.com/HiLab-git/SSL4MIS}},
+	  year={2020}}
+
+
+[SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT).
