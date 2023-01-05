@@ -53,7 +53,7 @@ Please consider citing the following works, if you use in your research/projects
 	@inproceedings{wang2022triple,
 	  title={Triple-view feature learning for medical image segmentation},
 	  author={Wang, Ziyang and Voiculescu, Irina},
-	  booktitle={MICCAI Workshop on Resource-Efficient Medical Image Analysis},
+	  booktitle={MICCAI Workshop on Resource-Efficient Medical Image Analysis (MICCAI-W)},
 	  pages={42--54},
 	  year={2022},
 	  organization={Springer}
@@ -78,7 +78,7 @@ Please consider citing the following works, if you use in your research/projects
 	@inproceedings{wang2022when,
 	  title={When CNN Meet with ViT: Towards Semi-Supervised Learning for Multi-Class Medical Image Semantic Segmentation},
 	  author={Wang, Ziyang and Li, Tianze and Zheng, Jian-Qing and Huang, Baoru},
-	  booktitle={European Conference on Computer Vision (ECCV)},
+	  booktitle={European Conference on Computer Vision Workshop (ECCV-W)},
 	  year={2022}
 	}
 
