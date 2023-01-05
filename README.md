@@ -83,5 +83,4 @@ This code is mainly borrowed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS
 	  howpublished={\url{https://github.com/HiLab-git/SSL4MIS}},
 	  year={2020}}
 
-
-[SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT).
+Some of the other code is based on [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT), [nnUNet](https://github.com/MIC-DKFZ/nnUNet).
