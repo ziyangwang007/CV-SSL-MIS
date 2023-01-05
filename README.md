@@ -62,7 +62,7 @@ Please consider citing the following works, if you use in your research/projects
 	@inproceedings{wang2022uncertainty,
 	  title={An uncertainty-aware transformer for MRI cardiac semantic segmentation via mean teachers},
 	  author={Wang, Ziyang and Zheng, Jian-Qing and Voiculescu, Irina},
-	  booktitle={Annual Conference on Medical Image Understanding and Analysis},
+	  booktitle={Annual Conference on Medical Image Understanding and Analysis (MIUA)},
 	  pages={494--507},
 	  year={2022},
 	  organization={Springer}
@@ -79,7 +79,8 @@ Please consider citing the following works, if you use in your research/projects
 	  title={When CNN Meet with ViT: Towards Semi-Supervised Learning for Multi-Class Medical Image Semantic Segmentation},
 	  author={Wang, Ziyang and Li, Tianze and Zheng, Jian-Qing and Huang, Baoru},
 	  booktitle={European Conference on Computer Vision Workshop (ECCV-W)},
-	  year={2022}
+	  year={2022},
+	  organization={Springer}
 	}
 
 	Exigent Examiner and Mean Teacher: A Novel 3D CNN-based Semi-Supervised Learning Framework for Brain Tumor Segmentation (TBC)
