@@ -27,12 +27,12 @@ BraTS from [Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc
 3. Train the model
 ```
 cd code
-python train_XXX.py --root_path ../data/XXX --exp ACDC/XXX --model unet -max_iterations 30000 -batch_size 24 --base_lr 0.001 --num_classes 4 --labeled_num 7
+python train_XXX.py --root_path ../data/XXX --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
 4. Test the model
 ```
-python test_XXXXX.py
+python test_XXXXX.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
 ```
 
 
@@ -73,7 +73,6 @@ Please consider citing the following works, if you use in your research/projects
 
 
 ## Acknowledgement
-
 
 This code is mainly borrowed from [SSL4MIS](https://github.com/HiLab-git/SSL4MIS).
 
