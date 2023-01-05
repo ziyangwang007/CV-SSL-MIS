@@ -32,10 +32,10 @@ python train_XXX.py --root_path ../data/XXX --exp ACDC/XXX --model XXX -max_iter
 
 4. Test the model
 ```
-python test_XXXXX.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
+python test_XXX.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
 ```
 
-
+You can choose model, dataset, experiment name, iteration number, batch size and etc in your command line, or leave it with default option.
 
 ## References
 
@@ -68,7 +68,21 @@ Please consider citing the following works, if you use in your research/projects
 	  organization={Springer}
 	}
 
-	TBC
+	@inproceedings{wang2022adversarial,
+	  title={Adversarial Vision Transformer for Medical Image Semantic Segmentation with Limited Annotations},
+	  author={Wang, Ziyang and Zhao, Chengkuan and Ni, Zixuan},
+	  booktitle={33rd British Machine Vision Conference (BMVC)},
+	  year={2022}
+	}
+
+	@inproceedings{wang2022when,
+	  title={When CNN Meet with ViT: Towards Semi-Supervised Learning for Multi-Class Medical Image Semantic Segmentation},
+	  author={Wang, Ziyang and Li, Tianze and Zheng, Jian-Qing and Huang, Baoru},
+	  booktitle={European Conference on Computer Vision (ECCV)},
+	  year={2022}
+	}
+
+	Exigent Examiner and Mean Teacher: A Novel 3D CNN-based Semi-Supervised Learning Framework for Brain Tumor Segmentation (TBC)
 
 
 
