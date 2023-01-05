@@ -53,7 +53,7 @@ Please consider citing the following works, if you use in your research/projects
 	@inproceedings{wang2022triple,
 	  title={Triple-view feature learning for medical image segmentation},
 	  author={Wang, Ziyang and Voiculescu, Irina},
-	  booktitle={MICCAI Workshop on Resource-Efficient Medical Image Analysis (MICCAI-W)},
+	  booktitle={Medical Image Computing and Computer Assisted Intervention Workshop (MICCAI-W)},
 	  pages={42--54},
 	  year={2022},
 	  organization={Springer}
