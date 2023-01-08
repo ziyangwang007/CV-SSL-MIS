@@ -67,7 +67,7 @@ Please consider citing the following works, if you use in your research/projects
 	  year={2022},
 	  organization={Springer}
 	}
-
+<!-- 
 	@inproceedings{wang2022adversarial,
 	  title={Adversarial Vision Transformer for Medical Image Semantic Segmentation with Limited Annotations},
 	  author={Wang, Ziyang and Zhao, Chengkuan and Ni, Zixuan},
@@ -81,7 +81,7 @@ Please consider citing the following works, if you use in your research/projects
 	  booktitle={European Conference on Computer Vision Workshop (ECCV-W)},
 	  year={2022},
 	  organization={Springer}
-	}
+	} -->
 
 	Exigent Examiner and Mean Teacher: A Novel 3D CNN-based Semi-Supervised Learning Framework for Brain Tumor Segmentation (TBC)
 
