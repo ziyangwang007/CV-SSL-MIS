@@ -83,7 +83,7 @@ Please consider citing the following works, if you use in your research/projects
 	  organization={Springer}
 	} -->
 
-	Exigent Examiner and Mean Teacher: A Novel 3D CNN-based Semi-Supervised Learning Framework for Brain Tumor Segmentation (TBC)
+	Exigent Examiner and Mean Teacher: A Novel 3D CNN-based Semi-Supervised Learning Framework for Brain Tumor Segmentation (T B C)
 
 
 
