@@ -33,7 +33,7 @@ cd code
 You can choose model(unet/vnet/pnet...), dataset(acdc/brats), experiment name(the path of saving your model weights and inference), iteration number, batch size and etc in your command line, or leave it with default option.
 
 
-[Fully Supervised (UNet)](https://arxiv.org/pdf/1505.04597.pdf)
+Fully Supervised (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
 ```
 python train_fully_supervised_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
@@ -41,53 +41,53 @@ python train_fully_supervised_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX
 ```
 
 
-[Mean Teacher](https://arxiv.org/pdf/1703.01780.pdf)
+Mean Teacher -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
 ```
 python train_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
 python train_mean_teacher_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-[Uncertainty-Aware Mean Teacher](https://arxiv.org/pdf/1907.07034.pdf)
+Uncertainty-Aware Mean Teacher -> [Paper Link](https://arxiv.org/pdf/1907.07034.pdf)
 ```
 python train_uncertainty_aware_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
 python train_uncertainty_aware_mean_teacher_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-[Uncertainty-Aware Mean Teacher - ViT](https://link.springer.com/chapter/10.1007/978-3-031-12053-4_37)
+Uncertainty-Aware Mean Teacher - ViT  -> [Paper Link](https://link.springer.com/chapter/10.1007/978-3-031-12053-4_37)
 ```
 python train_uncertainty_aware_mean_teacher_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-[Cross Pseudo Supervision](https://arxiv.org/pdf/2106.01226.pdf)
+Cross Pseudo Supervision  -> [Paper Link](https://arxiv.org/pdf/2106.01226.pdf)
 ```
 python train_cross_pseudo_supervision_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
 python train_cross_pseudo_supervision_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-[Cross Pseudo Supervision - ViT CNN](https://arxiv.org/pdf/2112.04894.pdf)
+Cross Pseudo Supervision - ViT CNN  -> [Paper Link](https://arxiv.org/pdf/2112.04894.pdf)
 ```
 python train_cross_teaching_between_cnn_transformer_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-[Adversarial Consistency ViT](https://bmvc2022.mpi-inf.mpg.de/1002.pdf)
+Adversarial Consistency ViT  -> [Paper Link](https://bmvc2022.mpi-inf.mpg.de/1002.pdf)
 ```
 python train_adversarial_consistency_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-[Semi CNN-ViT](https://arxiv.org/pdf/2208.06449.pdf)
+Semi CNN-ViT  -> [Paper Link](https://arxiv.org/pdf/2208.06449.pdf)
 ```
 python train_cnn_meet_vit_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-[Triple-View Segmentation](https://arxiv.org/pdf/2208.06303.pdf)
+Triple-View Segmentation  -> [Paper Link](https://arxiv.org/pdf/2208.06303.pdf)
 ```
 python train_tripleview_2D(demo).py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-[Examiner-Student-Teacher] TBC - double blind
+Examiner-Student-Teacher  -> Paper TBC - double blind
 ```
 python train_exam_student_teacher_3D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
