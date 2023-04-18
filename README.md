@@ -72,6 +72,11 @@ Cross Pseudo Supervision - ViT CNN  -> [Paper Link](https://arxiv.org/pdf/2112.0
 python train_cross_teaching_between_cnn_transformer_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
+Contrastive Learning - Cross Pseudo Supervision - ViT CNN 
+```
+python train_dual_contrastive_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
 Adversarial Consistency ViT  -> [Paper Link](https://bmvc2022.mpi-inf.mpg.de/1002.pdf)
 ```
 python train_adversarial_consistency_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
@@ -87,7 +92,7 @@ Triple-View Segmentation  -> [Paper Link](https://arxiv.org/pdf/2208.06303.pdf)
 python train_tripleview_2D(demo).py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Examiner-Student-Teacher  -> Paper TBC - double blind
+Examiner-Student-Teacher  
 ```
 python train_exam_student_teacher_3D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
