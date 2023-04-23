@@ -4,9 +4,7 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 ## Requirements
 * [Pytorch]
-* TensorBoardX
-* Efficientnet-Pytorch
-* Some basic python packages such as Numpy, Scikit-image, SimpleITK, Scipy ......
+* Some basic python packages such as Numpy, Scikit-image, SimpleITK, Scipy, Medpy ......
 
 
 ## Usage
