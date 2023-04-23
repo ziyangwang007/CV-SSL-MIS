@@ -33,7 +33,7 @@ cd code
 You can choose model(unet/vnet/pnet...), dataset(acdc/brats), experiment name(the path of saving your model weights and inference), iteration number, batch size and etc in your command line, or leave it with default option.
 
 
-Fully Supervised (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
+Fully Supervised CNN (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
 ```
 python train_fully_supervised_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
@@ -41,26 +41,26 @@ python train_fully_supervised_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX
 ```
 
 
-Mean Teacher -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
+Mean Teacher CNN -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
 ```
 python train_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
 python train_mean_teacher_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-Uncertainty-Aware Mean Teacher -> [Paper Link](https://arxiv.org/pdf/1907.07034.pdf)
+Uncertainty-Aware Mean Teacher CNN -> [Paper Link](https://arxiv.org/pdf/1907.07034.pdf)
 ```
 python train_uncertainty_aware_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
 python train_uncertainty_aware_mean_teacher_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-Uncertainty-Aware Mean Teacher - ViT  -> [Paper Link](https://link.springer.com/chapter/10.1007/978-3-031-12053-4_37)
+Uncertainty-Aware Mean Teacher ViT  -> [Paper Link](https://link.springer.com/chapter/10.1007/978-3-031-12053-4_37)
 ```
 python train_uncertainty_aware_mean_teacher_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Cross Pseudo Supervision  -> [Paper Link](https://arxiv.org/pdf/2106.01226.pdf)
+Cross Pseudo Supervision CNN -> [Paper Link](https://arxiv.org/pdf/2106.01226.pdf)
 ```
 python train_cross_pseudo_supervision_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
@@ -97,12 +97,12 @@ Semi CNN-ViT  -> [Paper Link](https://arxiv.org/pdf/2208.06449.pdf)
 python train_cnn_meet_vit_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Triple-View Segmentation  -> [Paper Link](https://arxiv.org/pdf/2208.06303.pdf)
+Triple-View Segmentation CNN -> [Paper Link](https://arxiv.org/pdf/2208.06303.pdf)
 ```
 python train_tripleview_2D(demo).py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Examiner-Student-Teacher  
+Examiner-Student-Teacher CNN 
 ```
 python train_exam_student_teacher_3D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
