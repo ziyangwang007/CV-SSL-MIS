@@ -6,7 +6,7 @@ import shutil
 import sys
 import time
 from datetime import datetime
-from info_nce import *
+# from info_nce import *
 
 import numpy as np
 import torch
@@ -57,7 +57,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
                     default='../data/ACDC', help='Name of Experiment')
 parser.add_argument('--exp', type=str,
-                    default='ACDC/Contrastive_Fixmatch_Cros', help='experiment_name')
+                    default='ACDC/Contrastive_Fixmatch_Cross', help='experiment_name')
 parser.add_argument('--model', type=str,
                     default='unet', help='model_name')
 parser.add_argument('--max_iterations', type=int,
@@ -330,7 +330,7 @@ def train(args, snapshot_path):
     dice_loss = losses.DiceLoss(num_classes)
     pixel_wise_contrastive_loss_criter = ConLoss()
     contrastive_loss_sup_criter = contrastive_loss_sup()
-    infoNCE_loss = InfoNCE()
+    # infoNCE_loss = InfoNCE()
 
     writer = SummaryWriter(snapshot_path + '/log')
     logging.info("{} iterations per epoch".format(len(trainloader)))
