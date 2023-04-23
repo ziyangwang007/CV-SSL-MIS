@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
                     default='../data/ACDC', help='Name of Experiment')
 parser.add_argument('--exp', type=str,
-                    default='ACDC/Cross_teaching_min_max', help='experiment_name')
+                    default='ACDC/Contrastive_Fixmatch_Cross', help='experiment_name')
 parser.add_argument('--model', type=str,
                     default='unet', help='model_name')
 parser.add_argument('--max_iterations', type=int,
@@ -198,8 +198,8 @@ def train(args, snapshot_path):
     best_performance1 = 0.0
     best_performance2 = 0.0
     lr_ = base_lr
-#     iterator = tqdm(range(max_epoch), ncols=70)
-    for epoch_num in range(0,max_epoch):
+    iterator = tqdm(range(max_epoch), ncols=70)
+    for epoch_num in iterator:
         running_loss = 0.0
         contrast_running_loss = 0.0
         running_dice_val_1 = 0.0
@@ -221,8 +221,7 @@ def train(args, snapshot_path):
             outputs2 = model2(volume_batch_w)
             outputs_soft2 = torch.softmax(outputs2, dim=1)
             
-            consistency_weight = get_current_consistency_weight(
-                epoch_num)
+            consistency_weight = get_current_consistency_weight(epoch_num)
             
             loss1 = 0.5 * (ce_loss(outputs1[:args.labeled_bs], label_batch[:args.labeled_bs].long()) + dice_loss(
                             outputs_soft1[:args.labeled_bs], label_batch[:args.labeled_bs].unsqueeze(1)))
@@ -239,10 +238,11 @@ def train(args, snapshot_path):
             pseudo_supervision2 = dice_loss(
                 outputs_soft2[args.labeled_bs:], pseudo_outputs1.unsqueeze(1))
 
-            model1_loss = loss1 + consistency_weight * pseudo_supervision1
-            model2_loss = loss2 + consistency_weight * pseudo_supervision2
+
             
-            supervised_loss = model1_loss + model2_loss
+            supervised_loss = loss1 + loss2
+
+            semisupervised_loss = consistency_weight * pseudo_supervision1 + consistency_weight * pseudo_supervision2
 
             feat_l_q = classifier_1(outputs1[:args.labeled_bs][0::2])
             feat_l_k = classifier_2(outputs2[:args.labeled_bs][1::2])
@@ -252,12 +252,20 @@ def train(args, snapshot_path):
             feat_k = projector_2(outputs2[args.labeled_bs:])
             Loss_contrast_u = pixel_wise_contrastive_loss_criter(feat_q,feat_k)
 
-            Loss_diff = loss_diff(
-                    outputs_soft1[args.labeled_bs:], outputs_soft2[args.labeled_bs:],
-                    len(outputs_soft1[args.labeled_bs:]))
+            # Loss_diff = loss_diff(
+            #         outputs_soft1[args.labeled_bs:], outputs_soft2[args.labeled_bs:],
+            #         len(outputs_soft1[args.labeled_bs:]))
 
-            contrastive_loss = (Loss_contrast_l + Loss_contrast_u + Loss_diff)
-            loss = supervised_loss + 0.25*Loss_contrast_l + 0.25*Loss_contrast_u + 0.8*Loss_diff
+            contrastive_loss = (Loss_contrast_l + Loss_contrast_u)
+
+
+
+            model1_loss = loss1 + consistency_weight * pseudo_supervision1
+            model2_loss = loss2 + consistency_weight * pseudo_supervision2
+
+
+            loss = 2*supervised_loss + 0.5*contrastive_loss + 1.25*semisupervised_loss
+            # + 0.8*Loss_diff
     
             running_loss += loss
 
@@ -281,15 +289,15 @@ def train(args, snapshot_path):
                 
             iter_num = iter_num + 1
 
-#             writer.add_scalar('lr', lr_, iter_num)
-#             writer.add_scalar(
-#                 'consistency_weight/consistency_weight', consistency_weight, iter_num)
-#             writer.add_scalar('loss/model1_loss',
-#                               model1_loss, iter_num)
-#             writer.add_scalar('loss/model2_loss',
-#                               model2_loss, iter_num)
+            writer.add_scalar('lr', lr_, iter_num)
+            writer.add_scalar(
+                'consistency_weight/consistency_weight', consistency_weight, iter_num)
+            writer.add_scalar('loss/model1_loss',
+                              model1_loss, iter_num)
+            writer.add_scalar('loss/model2_loss',
+                              model2_loss, iter_num)
 #             logging.info('itr %d : loss : %0.2f , model1 loss : %0.2f , model2 loss : %0.2f, weit_con_loss : %0.3f, con_loss : %0.2f lr : %0.5f' % (iter_num, loss.item(), model1_loss.item(), model2_loss.item(), consistency_weight * contrastive_loss, contrastive_loss, lr_))
-            logging.info('itr %d, loss %0.2f, m1 loss %0.2f, m2 loss %0.2f, con_loss %0.2f,c_loss_l %0.2f,c_loss_u %0.2f,c_loss_d %0.2f, lr %f' % (iter_num, loss.item(), model1_loss.item(), model2_loss.item(), contrastive_loss, Loss_contrast_l.item(), Loss_contrast_u.item(), Loss_diff, lr_))
+            logging.info('itr %d, loss %0.2f, m1 loss %0.2f, m2 loss %0.2f, con_loss %0.2f,c_loss_l %0.2f,c_loss_u %0.2f, lr %f' % (iter_num, loss.item(), model1_loss.item(), model2_loss.item(), contrastive_loss, Loss_contrast_l.item(), Loss_contrast_u.item(),  lr_))
 
 #             if iter_num % 50 == 0:
 #                 image = volume_batch_w[1, 0:1, :, :]
@@ -305,7 +313,7 @@ def train(args, snapshot_path):
 #                 labs = label_batch[1, ...].unsqueeze(0) * 50
 #                 writer.add_image('train/GroundTruth', labs, iter_num)
 
-            if iter_num > 0 and iter_num % len(trainloader_w) == 0:
+            if iter_num > 0 and iter_num % 200 == 0:
                 model1.eval()
                 metric_list = 0.0
                 for _, sampled_batch in enumerate(valloader):
@@ -400,7 +408,7 @@ def train(args, snapshot_path):
         writer.add_scalar('Train/Loss', epoch_loss, epoch_num)
             
         if iter_num >= max_iterations:
-#             iterator.close()
+            iterator.close()
             break
     writer.close()
     return "Training Finished!"
