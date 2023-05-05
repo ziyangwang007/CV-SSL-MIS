@@ -7,8 +7,10 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 * Some basic python packages such as Numpy, Scikit-image, SimpleITK, Scipy, Medpy ......
 
 ## News and To-do List
-- [x] Add Contrastive Learning
-- [ ] Add SegFormer
+- [x] Contrastive Learning
+- [x] Various Segmentation Backbone Networks 
+- [x] Various Semi-Supervised Frameworks 
+- [ ] SegFormer
 
 ## Usage
 
