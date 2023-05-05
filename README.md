@@ -118,7 +118,10 @@ python train_exam_student_teacher_3D.py --root_path ../data/ACDC --exp ACDC/XXX 
 ```
 python test_XXX.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
 ```
-
+Check trained model and inference
+```
+cd model
+```
 
 
 ## Acknowledgement
