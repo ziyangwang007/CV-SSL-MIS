@@ -1,19 +1,3 @@
-# -*- coding: utf-8 -*-
-# Author: Xiangde Luo
-# Date:   16 Dec. 2021
-# Implementation for Semi-Supervised Medical Image Segmentation via Cross Teaching between CNN and Transformer.
-# # Reference:
-#   @article{luo2021ctbct,
-#   title={Semi-Supervised Medical Image Segmentation via Cross Teaching between CNN and Transformer},
-#   author={Luo, Xiangde and Hu, Minhao and Song, Tao and Wang, Guotai and Zhang, Shaoting},
-#   journal={arXiv preprint arXiv:2112.04894},
-#   year={2021}}
-#   In the original paper, we don't use the validation set to select checkpoints and use the last iteration to inference for all methods.
-#   In addition, we combine the validation set and test set to report the results.
-#   We found that the random data split has some bias (the validation set is very tough and the test set is very easy).
-#   Actually, this setting is also a fair comparison.
-#   download pre-trained model to "code/pretrained_ckpt" folder, link:https://drive.google.com/drive/folders/1UC3XOoezeum0uck4KBVGa8osahs6rKUY
-
 import argparse
 import logging
 import os
@@ -146,9 +130,6 @@ def patients_to_slices(dataset, patiens_num):
     if "ACDC" in dataset:
         ref_dict = {"3": 68, "7": 136,
                     "14": 256, "21": 396, "28": 512, "35": 664, "140": 1312}
-    elif "Prostate":
-        ref_dict = {"2": 27, "4": 53, "8": 120,
-                    "12": 179, "16": 256, "21": 312, "42": 623}
     else:
         print("Error")
     return ref_dict[str(patiens_num)]

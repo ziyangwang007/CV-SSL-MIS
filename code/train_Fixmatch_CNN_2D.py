@@ -100,16 +100,7 @@ def patients_to_slices(dataset, patiens_num):
             "35": 664,
             "140": 1312,
         }
-    elif "Prostate":
-        ref_dict = {
-            "2": 27,
-            "4": 53,
-            "8": 120,
-            "12": 179,
-            "16": 256,
-            "21": 312,
-            "42": 623,
-        }
+
     else:
         print("Error")
     return ref_dict[str(patiens_num)]
