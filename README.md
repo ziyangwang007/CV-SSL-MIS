@@ -69,6 +69,11 @@ Cross Pseudo Supervision - ViT CNN  -> [Paper Link](https://arxiv.org/pdf/2112.0
 python train_cross_teaching_between_cnn_transformer_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
+Cross Pseudo Supervision - ViT  -> [Paper Link](https://ieeexplore.ieee.org/abstract/document/9897482/)
+```
+python train_cross_pseudo_supervision_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
 Contrastive Learning - Cross Pseudo Supervision - ViT CNN 
 ```
 python train_Contrastive_Cross_CNN_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
