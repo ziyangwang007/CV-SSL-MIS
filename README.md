@@ -11,6 +11,7 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 - [x] Various Segmentation Backbone Networks 
 - [x] Various Semi-Supervised Frameworks 
 - [ ] SegFormer
+- [ ] a SSL paper in CVPR 2022
 
 ## Usage
 
