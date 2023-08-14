@@ -33,7 +33,7 @@ BraTS from [Google Drive Link](https://drive.google.com/file/d/1erKoNzknobgn7gZY
 cd code
 ```
 
-You can choose model(unet/vnet/pnet...), dataset(acdc/brats), experiment name(the path of saving your model weights and inference), iteration number, batch size and etc in your command line, or leave it with default option.
+You can choose model(unet/vnet/pnet...) by '--model', dataset(acdc/brats) by '--root_path', ratio of labeled/unlabel training set(10%, 20%, 30%, 50%) by '--labeled_num', experiment name(the path of saving your model weights and inference) by '--exp', iteration number, batch size, multi-class classification and etc in your command line, or leave it with default option.
 
 
 Fully Supervised - CNN (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
