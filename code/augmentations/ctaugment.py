@@ -21,6 +21,7 @@ from collections import namedtuple
 import numpy as np
 from scipy.ndimage.interpolation import zoom
 from PIL import Image, ImageOps, ImageEnhance, ImageFilter
+from torchvision import transforms
 
 
 OPS = {}
@@ -42,6 +43,8 @@ class CTAugment(object):
         self.depth = depth
         self.th = th
         self.rates = {}
+        self.random_depth_weak = 2
+        self.random_depth_strong = 2
         for k, op in OPS.items():
             self.rates[k] = tuple([np.ones(x, "f") for x in op.bins])
 
@@ -52,24 +55,29 @@ class CTAugment(object):
         return p
 
     def policy(self, probe, weak):
-        num_strong_ops = 11
+        num_strong_ops = 9
+#         print('list(OPS.keys())',list(OPS.keys()))
         kl_weak = list(OPS.keys())[num_strong_ops:]
+#         print('kl_weak',kl_weak)
         kl_strong = list(OPS.keys())[:num_strong_ops]
+#         print('kl_strong',kl_strong)
 
         if weak:
             kl = kl_weak
+            current_depth = self.random_depth_weak
         else:
             kl = kl_strong
+            current_depth = self.random_depth_strong
 
         v = []
         if probe:
-            for _ in range(self.depth):
+            for _ in range(current_depth):
                 k = random.choice(kl)
                 bins = self.rates[k]
                 rnd = np.random.uniform(0, 1, len(bins))
                 v.append(OP(k, rnd.tolist()))
             return v
-        for _ in range(self.depth):
+        for _ in range(current_depth):
             vt = []
             k = random.choice(kl)
             bins = self.rates[k]
@@ -139,21 +147,21 @@ def equalize(x, level):
     return _imageop(x, ImageOps.equalize, level)
 
 
-@register(17)
-def invert(x, level):
-    return _imageop(x, ImageOps.invert, level)
+# @register(17)
+# def invert(x, level):
+#     return _imageop(x, ImageOps.invert, level)
 
 
-@register(8)
-def posterize(x, level):
-    level = 1 + int(level * 7.999)
-    return ImageOps.posterize(x, level)
+# @register(8)
+# def posterize(x, level):
+#     level = 1 + int(level * 7.999)
+#     return ImageOps.posterize(x, level)
 
 
-@register(17)
-def solarize(x, th):
-    th = int(th * 255.999)
-    return ImageOps.solarize(x, th)
+# @register(17)
+# def solarize(x, th):
+#     th = int(th * 255.999)
+#     return ImageOps.solarize(x, th)
 
 
 @register(17)
@@ -171,7 +179,6 @@ def sharpness(x, sharpness):
     return _enhance(x, ImageEnhance.Sharpness, sharpness)
 
 
-# weak after here
 
 
 @register(17)
@@ -192,6 +199,7 @@ def cutout(x, level):
             x.putpixel((i, j), 0)  # set the color accordingly
     return x
 
+# weak after here
 
 @register()
 def identity(x):

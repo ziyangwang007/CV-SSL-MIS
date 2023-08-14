@@ -7,7 +7,7 @@ from torch.autograd import Variable
 import numpy as np
 # from metrics import dice_coef
 # from metrics import dice
-
+from collections import OrderedDict
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -235,31 +235,13 @@ def weighted_loss(pred, mask):
     BCE = torch.nn.BCELoss(reduction = 'none')
     
     weit = 1 + 5*torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15) - mask).float()
-#     print(weit)
-#     wbce = F.binary_cross_entropy_with_logits(pred, mask, reduce='none')
     wbce = BCE(pred, mask)
-#     m = torch.nn.Sigmoid()
-#     input_ = torch.randn(3, requires_grad=True)
-#     target = torch.empty(3).random_(2)
-#     print(type(m(input_)))
-#     print(type(target))
-#     output = BCE(m(input_), target)
-#     print('output size',output.size())
-#     print('pred',pred.size())
-#     print('mask',pred.size())
-#     print('wbce',wbce.size())
     wbce = (weit*wbce).sum(dim=(2, 3)) / weit.sum(dim=(2, 3))
-#     print('wbce',wbce.size())
-
-    # pred = torch.sigmoid(pred)
     inter = ((pred * mask)*weit).sum(dim=(2, 3))
     union = ((pred + mask)*weit).sum(dim=(2, 3))
     wiou = 1 - (inter + 1)/(union - inter+1)
-#     print('wiou',wiou)
-#     print('wiou size',wiou.size())
-#     print((wbce + wiou).mean())
     
-    return (wbce + wiou).mean()  #
+    return (wbce + wiou).mean()  
 
 
 
@@ -299,6 +281,7 @@ def loss_diff(u_prediction_1, u_prediction_2, batch_size):
 #contrastive_loss
 
 class ConLoss(torch.nn.Module):
+#for unlabel data
     def __init__(self, temperature=0.07, base_temperature=0.07):
         """
         Contrastive Learning for Unpaired Image-to-Image Translation
@@ -309,22 +292,24 @@ class ConLoss(torch.nn.Module):
         self.base_temperature = base_temperature
         self.nce_includes_all_negatives_from_minibatch = False
         self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
+#         self.cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction = 'none')
         self.mask_dtype = torch.bool
+#         self.mask_dtype = torch.uint8 if version.parse(torch.__version__) < version.parse('1.2.0') else torch.bool
 
     def forward(self, feat_q, feat_k):
         assert feat_q.size() == feat_k.size(), (feat_q.size(), feat_k.size())
         batch_size = feat_q.shape[0]
         dim = feat_q.shape[1]
-        width = feat_q.shape[2]
-        feat_q = feat_q.view(batch_size, dim, -1).permute(0, 2, 1)
+#         width = feat_q.shape[2]
+        feat_q = feat_q.view(batch_size, dim, -1).permute(0, 2, 1)  #batch * dim * np  # batch * np * dim
         feat_k = feat_k.view(batch_size, dim, -1).permute(0, 2, 1)
         feat_q = F.normalize(feat_q, dim=-1, p=1)
         feat_k = F.normalize(feat_k, dim=-1, p=1)
         feat_k = feat_k.detach()
 
         # pos logit
-        l_pos = torch.bmm(feat_q.reshape(-1, 1, dim), feat_k.reshape(-1, dim, 1))
-        l_pos = l_pos.view(-1, 1)
+        l_pos = torch.bmm(feat_q.reshape(-1, 1, dim), feat_k.reshape(-1, dim, 1))  #(batch * np) * 1 * dim #(batch * np) * dim * 1  #(batch * np) * 1
+        l_pos = l_pos.view(-1, 1) #(batch * np) * 1
 
         # neg logit
         if self.nce_includes_all_negatives_from_minibatch:
@@ -334,22 +319,74 @@ class ConLoss(torch.nn.Module):
             batch_dim_for_bmm = batch_size
 
         # reshape features to batch size
-        feat_q = feat_q.reshape(batch_dim_for_bmm, -1, dim)
+        feat_q = feat_q.reshape(batch_dim_for_bmm, -1, dim)  #batch * np * dim
         feat_k = feat_k.reshape(batch_dim_for_bmm, -1, dim)
         npatches = feat_q.size(1)
-        l_neg_curbatch = torch.bmm(feat_q, feat_k.transpose(2, 1))
+        l_neg_curbatch = torch.bmm(feat_q, feat_k.transpose(2, 1))  # batch * np * np
 
         diagonal = torch.eye(npatches, device=feat_q.device, dtype=self.mask_dtype)[None, :, :]
 
-        l_neg_curbatch.masked_fill_(diagonal, -10.0)
-        l_neg = l_neg_curbatch.view(-1, npatches)
+        l_neg_curbatch.masked_fill_(diagonal, -float('inf'))
+        l_neg = l_neg_curbatch.view(-1, npatches)  #(batch * np) * np
 
-        out = torch.cat((l_pos, l_neg), dim=1) / self.temperature
+        out = torch.cat((l_pos, l_neg), dim=1) / self.temperature  #(batch * np) * (np+1)
 
         loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
                                                         device=feat_q.device))
 
         return loss
+    
+    
+# class MocoLoss(torch.nn.Module):
+# #for unlabel data
+#     def __init__(self, temperature=0.07):
+
+#         super(MocoLoss, self).__init__()
+#         self.temperature = temperature
+#         self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
+
+#     def forward(self, feat_q, feat_k, queue):
+#         assert feat_q.size() == feat_k.size(), (feat_q.size(), feat_k.size())
+#         feat_q = F.normalize(feat_q, dim=-1, p=1)
+#         feat_k = F.normalize(feat_k, dim=-1, p=1)
+#         batch_size = feat_q.shape[0]
+#         dim = feat_q.shape[1]
+#         K = len(queue)
+# #         print('K',K)
+
+#         feat_k = feat_k.detach()
+
+#         # pos logit
+#         l_pos = torch.bmm(feat_q.view(batch_size,1,dim),feat_k.view(batch_size,dim,1))  #batch_size * 1
+#         l_pos = l_pos.view(-1, 1)
+#         feat_k = feat_k.transpose(0,1)
+# #         print('feat_k',feat_k.size())
+#         # neg logit
+#         if K == 0:
+#             l_neg = torch.mm(feat_q.view(batch_size,dim), feat_k)
+#         else:
+            
+#             queue_tensor = torch.cat(queue,dim = 1)
+# #             print('queue_tensor.size()',queue_tensor.size())
+        
+#             l_neg = torch.mm(feat_q.view(batch_size,dim), queue_tensor) #batch_size * K
+# #         print(l_pos.size())
+# #         print(l_neg.size())
+
+#         out = torch.cat((l_pos, l_neg), dim=1) / self.temperature  #batch_size * (K+1)
+        
+# #         print(1)
+        
+#         loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
+#                                                         device=feat_q.device))
+# #         print(2)
+        
+#         queue.append(feat_k)
+        
+#         if K >= 10:
+#             queue.pop(0)
+
+#         return loss,queue
     
     
 class contrastive_loss_sup(torch.nn.Module):
@@ -363,13 +400,15 @@ class contrastive_loss_sup(torch.nn.Module):
         self.base_temperature = base_temperature
         self.nce_includes_all_negatives_from_minibatch = False
         self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
+#         self.cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction = 'none')
         self.mask_dtype = torch.bool
+#         self.mask_dtype = torch.uint8 if version.parse(torch.__version__) < version.parse('1.2.0') else torch.bool
 
     def forward(self, feat_q, feat_k):
         assert feat_q.size() == feat_k.size(), (feat_q.size(), feat_k.size())
         batch_size = feat_q.shape[0]
         dim = feat_q.shape[1]
-        width = feat_q.shape[2]
+#         width = feat_q.shape[2]
         feat_q = feat_q.view(batch_size, dim, -1).permute(0, 2, 1)
         feat_k = feat_k.view(batch_size, dim, -1).permute(0, 2, 1)
         feat_q = F.normalize(feat_q, dim=-1, p=1)
@@ -395,14 +434,278 @@ class contrastive_loss_sup(torch.nn.Module):
 
         diagonal = torch.eye(npatches, device=feat_q.device, dtype=self.mask_dtype)[None, :, :]
 
-        l_neg_curbatch.masked_fill_(diagonal, -10.0)
+        l_neg_curbatch.masked_fill_(diagonal, -float('inf'))
         l_neg = l_neg_curbatch.view(-1, npatches)
-#         print('l_neg size',l_neg.size())
-#         print('l_pos size',l_pos.size())
         l_pos = torch.zeros((l_neg.size(0),1)).cuda()
         out = torch.cat((l_pos, l_neg), dim=1) / self.temperature
 
         loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
                                                         device=feat_q.device))
 
-        return loss  
+        return loss
+    
+def info_nce_loss(feats1,feats2):
+#     imgs, _ = batch
+#     imgs = torch.cat(imgs, dim=0)
+
+    # Encode all images
+#     feats = self.convnet(imgs)
+    # Calculate cosine similarity
+    cos_sim = F.cosine_similarity(feats1[:,None,:], feats2[None,:,:], dim=-1)
+    # Mask out cosine similarity to itself
+    self_mask = torch.eye(cos_sim.shape[0], dtype=torch.bool, device=cos_sim.device)
+    cos_sim.masked_fill_(self_mask, -9e15)
+    # Find positive example -> batch_size//2 away from the original example
+    pos_mask = self_mask.roll(shifts=cos_sim.shape[0]//2, dims=0)
+    # InfoNCE loss
+    cos_sim = cos_sim / 0.07
+    nll = -cos_sim[pos_mask] + torch.logsumexp(cos_sim, dim=-1)
+    nll = nll.mean()
+
+    # Logging loss
+#     self.log(mode+'_loss', nll)
+    # Get ranking position of positive example
+#     comb_sim = torch.cat([cos_sim[pos_mask][:,None],  # First position positive example
+#                               cos_sim.masked_fill(pos_mask, -9e15)],
+#                              dim=-1)
+#     sim_argsort = comb_sim.argsort(dim=-1, descending=True).argmin(dim=-1)
+#     # Logging ranking metrics
+#     self.log(mode+'_acc_top1', (sim_argsort == 0).float().mean())
+#     self.log(mode+'_acc_top5', (sim_argsort < 5).float().mean())
+#     self.log(mode+'_acc_mean_pos', 1+sim_argsort.float().mean())
+
+    return nll
+
+class contrastive_loss_sup(torch.nn.Module):
+    def __init__(self, temperature=0.07, base_temperature=0.07):
+        """
+        Contrastive Learning for Unpaired Image-to-Image Translation
+        models/patchnce.py
+        """
+        super(contrastive_loss_sup, self).__init__()
+        self.temperature = temperature
+        self.base_temperature = base_temperature
+        self.nce_includes_all_negatives_from_minibatch = False
+        self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
+#         self.cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction = 'none')
+        self.mask_dtype = torch.bool
+#         self.mask_dtype = torch.uint8 if version.parse(torch.__version__) < version.parse('1.2.0') else torch.bool
+
+    def forward(self, feat_q, feat_k):
+        assert feat_q.size() == feat_k.size(), (feat_q.size(), feat_k.size())
+        batch_size = feat_q.shape[0]
+        dim = feat_q.shape[1]
+#         width = feat_q.shape[2]
+        feat_q = feat_q.view(batch_size, dim, -1).permute(0, 2, 1)
+        feat_k = feat_k.view(batch_size, dim, -1).permute(0, 2, 1)
+        feat_q = F.normalize(feat_q, dim=-1, p=1)
+        feat_k = F.normalize(feat_k, dim=-1, p=1)
+        feat_k = feat_k.detach()
+
+        # pos logit
+        l_pos = torch.bmm(feat_q.reshape(-1, 1, dim), feat_k.reshape(-1, dim, 1))  
+        l_pos = l_pos.view(-1, 1) 
+        # neg logit
+        if self.nce_includes_all_negatives_from_minibatch:
+            # reshape features as if they are all negatives of minibatch of size 1.
+            batch_dim_for_bmm = 1
+        else:
+            batch_dim_for_bmm = batch_size
+
+        # reshape features to batch size
+        feat_q = feat_q.reshape(batch_dim_for_bmm, -1, dim)
+        feat_k = feat_k.reshape(batch_dim_for_bmm, -1, dim)
+        npatches = feat_q.size(1)
+        l_neg_curbatch = torch.bmm(feat_q, feat_k.transpose(2, 1))
+
+        diagonal = torch.eye(npatches, device=feat_q.device, dtype=self.mask_dtype)[None, :, :]
+
+        l_neg_curbatch.masked_fill_(diagonal, -float('inf'))
+        l_neg = l_neg_curbatch.view(-1, npatches)
+#         l_pos = torch.zeros((l_neg.size(0),1)).cuda()
+        out = torch.cat((l_pos, l_neg), dim=1) / self.temperature
+
+        loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
+                                                        device=feat_q.device))
+
+        return loss
+
+class MocoLoss(torch.nn.Module):
+    def __init__(self, temperature=0.07, use_queue = True, max_queue = 1):
+
+        super(MocoLoss, self).__init__()
+        self.temperature = temperature
+        self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
+        self.use_queue = use_queue
+        self.mask_dtype = torch.bool
+        self.queue = OrderedDict()
+        self.idx_list = []
+        self.max_queue = max_queue
+
+    def forward(self, feat_q, feat_k, idx):
+        num_enqueue = 0
+        num_update = 0
+        num_dequeue = 0
+        mid_pop = 0
+        assert feat_q.size() == feat_k.size(), (feat_q.size(), feat_k.size())
+        dim = feat_q.shape[1]
+        batch_size = feat_q.shape[0]
+        feat_q = feat_q.reshape(batch_size,-1)  
+        feat_k = feat_k.reshape(batch_size,-1)
+
+        K = len(self.queue)
+#         print(K)
+
+        feat_k = feat_k.detach()
+
+        # pos logit
+        l_pos = F.cosine_similarity(feat_q,feat_k,dim=1)        
+        l_pos = l_pos.view(-1, 1)
+
+        # neg logit
+        if K == 0 or not self.use_queue:
+            l_neg = F.cosine_similarity(feat_q[:,None,:], feat_k[None,:,:], dim=-1)
+        else:
+            for i in range(0,batch_size):
+                if str(idx[i].item()) in self.queue.keys():
+                    self.queue.pop(str(idx[i].item()))
+                    mid_pop += 1
+            queue_tensor = torch.cat(list(self.queue.values()),dim = 0)
+            l_neg = F.cosine_similarity(feat_q[:,None,:], queue_tensor.reshape(-1,feat_q.size(1))[None,:,:], dim=-1)
+
+        out = torch.cat((l_pos, l_neg), dim=1) / self.temperature  #batch_size * (K+1)
+        
+        loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
+                                                        device=feat_q.device))
+        
+        if self.use_queue:
+            for i in range(0,batch_size):
+                if str(idx[i].item()) not in self.queue.keys():
+                    self.queue[str(idx[i].item())] = feat_k[i].clone()[None,:]
+                    num_enqueue += 1
+                else:
+                    self.queue[str(idx[i].item())] = feat_k[i].clone()[None,:]
+                    num_update += 1
+                if len(self.queue) >= 1056 + 1:
+                    self.queue.popitem(False)
+
+                    num_dequeue += 1
+
+#         print('queue length, mid pop, enqueue, update queue, dequeue: ', len(self.queue), mid_pop, num_enqueue, num_update, num_dequeue)
+
+        return loss
+
+class ConLoss_queue(torch.nn.Module):
+#for unlabel data
+    def __init__(self, temperature=0.07, use_queue = True, max_queue = 1):
+        """
+        Contrastive Learning for Unpaired Image-to-Image Translation
+        models/patchnce.py
+        """
+        super(ConLoss_queue, self).__init__()
+        self.temperature = temperature
+        self.base_temperature = base_temperature
+        self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
+        self.mask_dtype = torch.bool
+        self.queue = OrderedDict()
+        self.idx_list = []
+        self.max_queue = max_queue
+
+
+    def forward(self, feat_q, feat_k):
+        num_enqueue = 0
+        num_update = 0
+        num_dequeue = 0
+        mid_pop = 0
+        assert feat_q.size() == feat_k.size(), (feat_q.size(), feat_k.size())
+        batch_size = feat_q.shape[0]
+        dim = feat_q.shape[1]
+#         width = feat_q.shape[2]
+        feat_q = feat_q.view(batch_size, dim, -1).permute(0, 2, 1)  #batch * dim * np  # batch * np * dim
+        feat_k = feat_k.view(batch_size, dim, -1).permute(0, 2, 1)
+        feat_q = F.normalize(feat_q, dim=-1, p=1)
+        feat_k = F.normalize(feat_k, dim=-1, p=1)
+        feat_k = feat_k.detach()
+
+        # pos logit
+        l_pos = torch.bmm(feat_q.reshape(-1, 1, dim), feat_k.reshape(-1, dim, 1))  #(batch * np) * 1 * dim #(batch * np) * dim * 1  #(batch * np) * 1
+        l_pos = l_pos.view(-1, 1) #(batch * np) * 1
+
+        # neg logit
+
+        # reshape features to batch size
+        feat_q = feat_q.reshape(batch_size, -1, dim)  #batch * np * dim
+        feat_k = feat_k.reshape(batch_size, -1, dim)
+        npatches = feat_q.size(1)
+        l_neg_curbatch = torch.bmm(feat_q, feat_k.transpose(2, 1))  # batch * np * np
+
+        diagonal = torch.eye(npatches, device=feat_q.device, dtype=self.mask_dtype)[None, :, :]
+
+        l_neg_curbatch.masked_fill_(diagonal, -float('inf'))
+        l_neg = l_neg_curbatch.view(-1, npatches)  #(batch * np) * np
+
+        out = torch.cat((l_pos, l_neg), dim=1) / self.temperature  #(batch * np) * (np+1)
+
+        loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
+                                                        device=feat_q.device))
+
+        return loss
+    
+
+class MocoLoss_list(torch.nn.Module):
+    def __init__(self, temperature=0.07, use_queue = True):
+
+        super(MocoLoss_list, self).__init__()
+        self.temperature = temperature
+        self.cross_entropy_loss = torch.nn.CrossEntropyLoss()
+        self.use_queue = use_queue
+        self.queue = []
+        self.mask_dtype = torch.bool
+        self.idx_list = []
+
+    def forward(self, feat_q, feat_k, idx):
+        assert feat_q.size() == feat_k.size(), (feat_q.size(), feat_k.size())
+        dim = feat_q.shape[1]
+        batch_size = feat_q.shape[0]
+        feat_q = feat_q.reshape(batch_size,-1)  #转成向量
+        feat_k = feat_k.reshape(batch_size,-1)
+
+        K = len(self.queue)
+#         print('K',K)
+
+        feat_k = feat_k.detach()
+
+        # pos logit
+        l_pos = F.cosine_similarity(feat_q,feat_k,dim=1)        
+        l_pos = l_pos.view(-1, 1)
+
+        # neg logit
+        if K == 0 or not self.use_queue:
+            l_neg = F.cosine_similarity(feat_q[:,None,:], feat_k[None,:,:], dim=-1)
+        else:            
+            queue_tensor = torch.cat(self.queue,dim = 0)
+            print(queue_tensor.size())
+            l_neg = F.cosine_similarity(feat_q[:,None,:], queue_tensor.reshape(-1,feat_q.size(1))[None,:,:], dim=-1)
+
+        out = torch.cat((l_pos, l_neg), dim=1) / self.temperature  #batch_size * (K+1)
+        
+        loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
+                                                        device=feat_q.device))
+        if self.use_queue:
+            self.queue.append(feat_k.clone())
+#             for i in range(0,24):
+#                 if idx[i] not in self.idx_list and len(self.queue) <512:
+# #                     print(idx[i].item())
+# #                     print(self.idx_list)
+#                     self.idx_list.append(idx[i].item())                    
+#                     self.queue.append(feat_k[i].clone()[None,:])
+#                     print('LIST',len(self.idx_list))
+#                     print('1',feat_k[i][None,:].size())
+#                 elif idx[i] in self.idx_list:
+#                     print('duplicate')
+            if K >= 512:
+#                 print('pop')
+                self.queue.pop(0)
+#                 self.idx_list.pop(0)
+
+        return loss

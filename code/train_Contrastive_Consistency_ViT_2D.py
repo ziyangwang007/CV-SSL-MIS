@@ -6,7 +6,8 @@ import shutil
 import sys
 import time
 from datetime import datetime
-# from info_nce import *
+from info_nce import *
+from collections import Counter
 
 import numpy as np
 import torch
@@ -57,7 +58,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
                     default='../data/ACDC', help='Name of Experiment')
 parser.add_argument('--exp', type=str,
-                    default='ACDC/Contrastive_Fixmatch_Cross', help='experiment_name')
+                    default='ACDC/Cross_teaching_min_max', help='experiment_name')
 parser.add_argument('--model', type=str,
                     default='unet', help='model_name')
 parser.add_argument('--max_iterations', type=int,
@@ -74,11 +75,11 @@ parser.add_argument('--seed', type=int,  default=1337, help='random seed')
 parser.add_argument('--num_classes', type=int,  default=4,
                     help='output channel of network')
 
-parser.add_argument("--load", default=False, action="store_true", help="restore previous checkpoint")
+parser.add_argument("--load", default=True, action="store_true", help="restore previous checkpoint")
 parser.add_argument(
     "--conf_thresh",
     type=float,
-    default=0.9,
+    default=0.95,
     help="confidence threshold for using pseudo-labels",
 )
 # label and unlabel
@@ -87,10 +88,12 @@ parser.add_argument('--labeled_bs', type=int, default=12,
 parser.add_argument('--labeled_num', type=int, default=136,
                     help='labeled data')
 # costs
-parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
+parser.add_argument('--ema_decay', type=float,  default=0.999, help='ema_decay')
 parser.add_argument('--consistency_type', type=str,
                     default="mse", help='consistency_type')
-parser.add_argument('--consistency', type=float,
+parser.add_argument('--consistency1', type=float,
+                    default=1, help='consistency')
+parser.add_argument('--consistency2', type=float,
                     default=0.1, help='consistency')
 parser.add_argument('--consistency_rampup', type=float,
                     default=200.0, help='consistency_rampup')
@@ -130,15 +133,18 @@ def patients_to_slices(dataset, patiens_num):
     ref_dict = None
     if "ACDC" in dataset:
         ref_dict = {"3": 68, "7": 136,
-                    "14": 256, "21": 396, "28": 512, "35": 664, "130":1132,"140": 1312}
+                    "14": 256, "21": 396, "28": 512, "35": 664, "130":1132,"126":1058, "140": 1312}
+    elif "Prostate":
+        ref_dict = {"2": 27, "4": 53, "8": 120,
+                    "12": 179, "16": 256, "21": 312, "42": 623}
     else:
         print("Error")
     return ref_dict[str(patiens_num)]
 
 
-def get_current_consistency_weight(epoch):  
+def get_current_consistency_weight(consistency,epoch):  
     # Consistency ramp-up from https://arxiv.org/abs/1610.02242
-    return args.consistency * ramps.sigmoid_rampup(epoch, args.consistency_rampup)
+    return consistency * ramps.sigmoid_rampup(epoch, args.consistency_rampup)
 
 
 def update_ema_variables(model, ema_model, alpha, global_step):
@@ -164,19 +170,23 @@ def train(args, snapshot_path):
                 param.detach_()
         return model
 
-    model1 = create_model(args.model)
+#     model1 = create_model(args.model)
 #     model2 = create_model(args.model)
-#     model1 = ViT_seg(config, img_size=args.patch_size,
-#                      num_classes=args.num_classes).cuda()
-#     model1.load_from(config)
+    model1 = ViT_seg(config, img_size=args.patch_size,
+                     num_classes=args.num_classes).cuda()
+    model1.load_from(config)
     model2 = ViT_seg(config, img_size=args.patch_size,
                      num_classes=args.num_classes).cuda()
     model2.load_from(config)
     
-    classifier_1 = create_model('classifier')
-    classifier_2 = create_model('classifier')
-    projector_1 = create_model('projector')
-    projector_2 = create_model('projector')
+#     classifier_1 = create_model('classifier')
+#     classifier_2 = create_model('classifier')
+#     classifier_1 = create_model('projector')
+#     classifier_2 = create_model('projector')
+    projector_1 = create_model('projector',ema=True)
+    projector_2 = create_model('projector',ema=True)
+    projector_3 = create_model('projector')
+    projector_4 = create_model('projector')
 
     def worker_init_fn(worker_id):
         random.seed(args.seed + worker_id)
@@ -217,22 +227,24 @@ def train(args, snapshot_path):
         result = result / max_val
         return result
 
-#     db_train_w = BaseDataSets(base_dir=args.root_path, split="train", num=None, transform=transforms.Compose([
-#         RandomGenerator_w(args.patch_size)
-#     ]))
-#     db_train_s = BaseDataSets(base_dir=args.root_path, split="train", num=None, transform=transforms.Compose([
-#         RandomGenerator_s(args.patch_size)
-#     ]))
 
-    def refresh_policies(db_train, cta):
+
+    def refresh_policies(db_train, cta,random_depth_weak, random_depth_strong):
         db_train.ops_weak = cta.policy(probe=False, weak=True)
         db_train.ops_strong = cta.policy(probe=False, weak=False)
+        cta.random_depth_weak = random_depth_weak
+        cta.random_depth_strong = random_depth_strong
+        if max(Counter([a.f for a in db_train.ops_weak]).values()) >=3 or max(Counter([a.f for a in db_train.ops_strong]).values()) >= 3:
+            print('too deep with one transform, refresh again')
+            refresh_policies(db_train, cta,random_depth_weak, random_depth_strong)
+        logging.info(f"CTA depth weak: {cta.random_depth_weak}")
+        logging.info(f"CTA depth strong: {cta.random_depth_strong}")
         logging.info(f"\nWeak Policy: {db_train.ops_weak}")
+#         logging.info(f"\nWeak Policy: {max(Counter([a.f for a in db_train.ops_weak]).values())}")
         logging.info(f"Strong Policy: {db_train.ops_strong}")
 
-    cta = augmentations.ctaugment.CTAugment()
+    cta = augmentations.aug.CTAugment()
     transform = CTATransform(args.patch_size, cta)
-#     transform = WeakStrongAugment(args.patch_size)
 
     # sample initial weak and strong augmentation policies (CTAugment)
     ops_weak = cta.policy(probe=False, weak=True)
@@ -247,9 +259,7 @@ def train(args, snapshot_path):
         ops_weak=ops_weak,
         ops_strong=ops_strong,
     )
-#     db_train_org = BaseDataSets(base_dir=args.root_path, split="train", num=None, transform=transforms.Compose([
-#         RandomGenerator_w(args.patch_size)
-#     ]))
+
     db_val = BaseDataSets(base_dir=args.root_path, split="val")
 
     total_slices = len(db_train)
@@ -261,10 +271,7 @@ def train(args, snapshot_path):
     batch_sampler = TwoStreamBatchSampler(
         labeled_idxs, unlabeled_idxs, batch_size, batch_size-args.labeled_bs)
 
-#     trainloader_w = DataLoader(db_train_w,batch_sampler=batch_sampler,
-#                              num_workers=4, pin_memory=True, worker_init_fn=worker_init_fn)  #?
-#     trainloader_s = DataLoader(db_train_s,batch_sampler=batch_sampler,
-#                              num_workers=4, pin_memory=True, worker_init_fn=worker_init_fn)  #?
+
     trainloader = DataLoader(
         db_train,
         batch_sampler=batch_sampler,
@@ -273,13 +280,7 @@ def train(args, snapshot_path):
         worker_init_fn=worker_init_fn,
     )
     
-#     trainloader_org = DataLoader(
-#         db_train_org,
-#         batch_sampler=batch_sampler,
-#         num_workers=4,
-#         pin_memory=True,
-#         worker_init_fn=worker_init_fn,
-#     )
+
 
     model1.train()
     model2.train()  
@@ -292,11 +293,9 @@ def train(args, snapshot_path):
     optimizer2 = optim.SGD(model2.parameters(), lr=base_lr,
                            momentum=0.9, weight_decay=0.0001)
     
-#     params = list(model1.parameters()) + list(model2.parameters())
 
-#     optimizer = optim.SGD(model1.parameters(), lr=base_lr,
-#                            momentum=0.9, weight_decay=0.0001)
-    
+    iter_num = 0
+    start_epoch = 0
     # if restoring previous models:
     if args.load:
         try:
@@ -304,75 +303,110 @@ def train(args, snapshot_path):
             logging.info(f"Snapshot path: {snapshot_path}")
             iter_num = []
             for filename in os.listdir(snapshot_path):
-                if "model_iter" in filename:
+                if "model1_iter" in filename:
                     basename, extension = os.path.splitext(filename)
                     iter_num.append(int(basename.split("_")[2]))
             iter_num = max(iter_num)
             for filename in os.listdir(snapshot_path):
-                if "model_iter" in filename and str(iter_num) in filename:
+                if "model1_iter" in filename and str(iter_num) in filename:
                     model_checkpoint = filename
         except Exception as e:
             logging.warning(f"Error finding previous checkpoints: {e}")
 
         try:
             logging.info(f"Restoring model checkpoint: {model_checkpoint}")
-            model, optimizer, start_epoch, performance = util.load_checkpoint(
-                snapshot_path + "/" + model_checkpoint, model, optimizer
+            model1, optimizer1, projector_1, projector_3, cta, start_epoch, best_performance1 = util.load_checkpoint(
+                snapshot_path + "/" + model_checkpoint, model1, optimizer1,projector_1,projector_3,cta,
             )
             logging.info(f"Models restored from iteration {iter_num}")
         except Exception as e:
+            iter_num = 0
             logging.warning(f"Unable to restore model checkpoint: {e}, using new model")
-    
+        try:
+            # check if there is previous progress to be restored:
+            logging.info(f"Snapshot path: {snapshot_path}")
+            iter_num = []
+            for filename in os.listdir(snapshot_path):
+                if "model2_iter" in filename:
+                    basename, extension = os.path.splitext(filename)
+                    iter_num.append(int(basename.split("_")[2]))
+            iter_num = max(iter_num)
+            for filename in os.listdir(snapshot_path):
+                if "model2_iter" in filename and str(iter_num) in filename:
+                    model_checkpoint = filename
+        except Exception as e:
+            logging.warning(f"Error finding previous checkpoints: {e}")
+
+        try:
+            logging.info(f"Restoring model checkpoint: {model_checkpoint}")
+            model2, optimizer2, projector_2, projector_4, cta, start_epoch, best_performance2 = util.load_checkpoint(
+                snapshot_path + "/" + model_checkpoint, model2, optimizer2,projector_2,projector_4,cta,
+            )
+            logging.info(f"Models restored from iteration {iter_num}")
+        except Exception as e:
+            iter_num = 0
+            logging.warning(f"Unable to restore model checkpoint: {e}, using new model")
     ce_loss = CrossEntropyLoss()
     dice_loss = losses.DiceLoss(num_classes)
     pixel_wise_contrastive_loss_criter = ConLoss()
     contrastive_loss_sup_criter = contrastive_loss_sup()
-    # infoNCE_loss = InfoNCE()
+    infoNCE_loss = InfoNCE()
 
     writer = SummaryWriter(snapshot_path + '/log')
     logging.info("{} iterations per epoch".format(len(trainloader)))
 
-    iter_num = 0
-    start_epoch = 0
+    
     
     max_epoch = max_iterations // len(trainloader) + 1
     best_performance1 = 0.0
     best_performance2 = 0.0
     lr_ = base_lr
-    
     iterator = tqdm(range(start_epoch, max_epoch), ncols=70)
     for epoch_num in iterator:
-#     for epoch_num in range(0,max_epoch):
         epoch_errors = []
-        refresh_policies(db_train, cta)
+        if iter_num <= 10000:
+            random_depth_weak = np.random.randint(3,high=5)
+            random_depth_strong = np.random.randint(2,high=5)
+        elif iter_num >= 20000:
+            random_depth_weak = 2
+            random_depth_strong = 2
+        else:
+            random_depth_weak = np.random.randint(2,high=5)
+            random_depth_strong = np.random.randint(2,high=5)
+        refresh_policies(db_train, cta,random_depth_weak, random_depth_strong)
 
         running_loss = 0.0
-        contrast_running_loss = 0.0
+        running_sup_loss = 0.0
+        running_unsup_loss = 0.0
+        running_comple_loss = 0.0
         running_con_l_l = 0
         running_con_l_u = 0
-        running_con_diff = 0
         running_con_loss = 0
         for i_batch, sampled_batch in enumerate(zip(trainloader)):
             
-            weak_batch, strong_batch, label_batch = (
+            raw_batch, weak_batch, strong_batch, label_batch_aug, label_batch = (
+                sampled_batch[0]["image"],
                 sampled_batch[0]["image_weak"],
                 sampled_batch[0]["image_strong"],
                 sampled_batch[0]["label_aug"],
+                sampled_batch[0]["label"],
             )
-#             batch_org = sampled_batch[1]["image"].cuda()
-
-            weak_batch, strong_batch, label_batch = (
+            label_batch_aug[label_batch_aug>=4] = 0
+            label_batch_aug[label_batch_aug<0] = 0
+            weak_batch, strong_batch, label_batch_aug = (
                 weak_batch.cuda(),
                 strong_batch.cuda(),
-                label_batch.cuda(),
+                label_batch_aug.cuda(),
             )
             
             # handle unfavorable cropping
             non_zero_ratio = torch.count_nonzero(label_batch) / (24 * 224 * 224)
-            if non_zero_ratio <= 0.02:
+            non_zero_ratio_aug = torch.count_nonzero(label_batch_aug) / (24 * 224 * 224)
+#             print(label_batch.unique(return_counts=True))
+#             print(non_zero_ratio)
+            if non_zero_ratio > 0 and non_zero_ratio_aug < 0.005:   #try 0.01
                 logging.info("Refreshing policy...")
-                refresh_policies(db_train, cta)
-                continue
+                refresh_policies(db_train, cta,random_depth_weak, random_depth_strong)
 #################################################################################################################################
             # outputs for model
             outputs_weak1 = model1(weak_batch)
@@ -384,103 +418,125 @@ def train(args, snapshot_path):
             outputs_weak_soft2 = torch.softmax(outputs_weak2, dim=1)
             outputs_strong2 = model2(strong_batch)
             outputs_strong_soft2 = torch.softmax(outputs_strong2, dim=1)
-           
+#################################################################################################################################           
             # minmax normalization for softmax outputs before applying mask
             pseudo_mask1 = (normalize(outputs_weak_soft1) > args.conf_thresh).float()
-            outputs_weak_masked1 = outputs_weak_soft1 * pseudo_mask1
-            pseudo_outputs1 = torch.argmax(outputs_weak_masked1.detach(), dim=1, keepdim=False)
+            outputs_weak_soft_masked1 = (normalize(outputs_weak_soft1)) * pseudo_mask1
+            pseudo_outputs1 = torch.argmax(outputs_weak_soft_masked1.detach(), dim=1, keepdim=False)
             
             pseudo_mask2 = (normalize(outputs_weak_soft2) > args.conf_thresh).float()
-            outputs_weak_masked2 = outputs_weak_soft2 * pseudo_mask2
-            pseudo_outputs2 = torch.argmax(outputs_weak_masked2.detach(), dim=1, keepdim=False)
-
+            outputs_weak_soft_masked2 = (normalize(outputs_weak_soft2)) * pseudo_mask2
+            pseudo_outputs2 = torch.argmax(outputs_weak_soft_masked2.detach(), dim=1, keepdim=False)
             
-#             pseudo_outputs1 = torch.argmax(outputs_weak_soft1.detach(), dim=1, keepdim=False)
-#             pseudo_outputs2 = torch.argmax(outputs_weak_soft2.detach(), dim=1, keepdim=False)
-            
-            consistency_weight = get_current_consistency_weight(
-                iter_num // 150)
+            outputs_weak_soft_masked = (outputs_weak_soft_masked1 + outputs_weak_soft_masked2)/2
+            pseudo_outputs = torch.argmax(outputs_weak_soft_masked.detach(), dim=1, keepdim=False)                         
+            consistency_weight1 = get_current_consistency_weight(args.consistency1,
+                    iter_num // 150)
+#             consistency_weight2 = get_current_consistency_weight(args.consistency2,
+#                     iter_num // 150)
+            if iter_num < 0:
+                consistency_weight2 = 0
+            else:
+                consistency_weight2 = get_current_consistency_weight(args.consistency2,
+                    iter_num // 150)
             
             # supervised loss
-            sup_loss1 = ce_loss(outputs_weak1[: args.labeled_bs], label_batch[:][: args.labeled_bs].long(),) + dice_loss(
+            sup_loss1 = ce_loss(outputs_weak1[: args.labeled_bs], label_batch_aug[:][: args.labeled_bs].long(),) + dice_loss(
                 outputs_weak_soft1[: args.labeled_bs],
-                label_batch[: args.labeled_bs].unsqueeze(1),
+                label_batch_aug[: args.labeled_bs].unsqueeze(1),
             )
             
-            sup_loss2 = ce_loss(outputs_weak2[: args.labeled_bs], label_batch[:][: args.labeled_bs].long(),) + dice_loss(
+            sup_loss2 = ce_loss(outputs_weak2[: args.labeled_bs], label_batch_aug[:][: args.labeled_bs].long(),) + dice_loss(
                 outputs_weak_soft2[: args.labeled_bs],
-                label_batch[: args.labeled_bs].unsqueeze(1),
+                label_batch_aug[: args.labeled_bs].unsqueeze(1),
             )
             sup_loss = sup_loss1 + sup_loss2
 #############################################################################################################################
             # complementary loss and adaptive sample weight for negative learning
-            comp_loss1, as_weight1 = get_comp_loss(weak=outputs_weak_soft1, strong=outputs_strong_soft1)
-            comp_loss2, as_weight2 = get_comp_loss(weak=outputs_weak_soft2, strong=outputs_strong_soft2)
+#             comp_loss1, as_weight1 = get_comp_loss(weak=outputs_weak_soft1, strong=outputs_strong_soft1)
+#             comp_loss2, as_weight2 = get_comp_loss(weak=outputs_weak_soft2, strong=outputs_strong_soft2)
 #############################################################################################################################
 #             unsupervised loss standard
             unsup_loss1 = (
-                ce_loss(outputs_strong1[args.labeled_bs :], pseudo_outputs2[args.labeled_bs :])
-                + dice_loss(outputs_strong_soft1[args.labeled_bs :], pseudo_outputs2[args.labeled_bs :].unsqueeze(1))
-                + as_weight1 * comp_loss1
+                ce_loss(outputs_strong1[args.labeled_bs :], pseudo_outputs[args.labeled_bs :])
+                + dice_loss(outputs_strong_soft1[args.labeled_bs :], pseudo_outputs[args.labeled_bs :].unsqueeze(1))
+#                 + as_weight1 * comp_loss1
             )
             unsup_loss2 = (
-                ce_loss(outputs_strong2[args.labeled_bs :], pseudo_outputs1[args.labeled_bs :])
-                + dice_loss(outputs_strong_soft2[args.labeled_bs :], pseudo_outputs1[args.labeled_bs :].unsqueeze(1))
-                + as_weight2 * comp_loss2
+                ce_loss(outputs_strong2[args.labeled_bs :], pseudo_outputs[args.labeled_bs :])
+                + dice_loss(outputs_strong_soft2[args.labeled_bs :], pseudo_outputs[args.labeled_bs :].unsqueeze(1))
+#                 + as_weight2 * comp_loss2
             )
-            
-#             # unsupervised loss cta            
-#             unsup_loss1 = (
-#                 ce_loss(outputs_strong1[args.labeled_bs :], pseudo_outputs1[args.labeled_bs :])
-#                 + dice_loss(outputs_strong_soft1[args.labeled_bs :], pseudo_outputs1[args.labeled_bs :].unsqueeze(1))
-#             )
-#             unsup_loss2 = (
-#                 ce_loss(outputs_strong2[args.labeled_bs :], pseudo_outputs2[args.labeled_bs :])
-#                 + dice_loss(outputs_strong_soft2[args.labeled_bs :], pseudo_outputs2[args.labeled_bs :].unsqueeze(1))
-#             )
-            
+#             comple_loss = as_weight1 * comp_loss1 +  as_weight2 * comp_loss2    
             unsup_loss = unsup_loss1 + unsup_loss2
-            
-            fixmatch_loss = sup_loss + consistency_weight * unsup_loss  #consistency_weight?
-            
+###########################################################################################################            
             #contrastive loss
-            feat_l_q = classifier_1(outputs_weak1[:args.labeled_bs])
-            feat_l_k = classifier_2(outputs_weak2[:args.labeled_bs])
+            feat_l_q = projector_3(outputs_weak1[:args.labeled_bs])  #torch.Size([12, 16, 56, 56])
+            feat_l_k = projector_4(outputs_weak2[:args.labeled_bs])
+#             print(feat_l_q.size())
+
+#             Loss_contrast_l = infoNCE_loss(feat_l_q.reshape(feat_l_q.size()[0],-1),feat_l_k.reshape(feat_l_k.size()[0],-1))
             Loss_contrast_l = contrastive_loss_sup_criter(feat_l_q,feat_l_k)
-#             Loss_contrast_l = info_nce_loss(feat_l_q.reshape(feat_l_q.size()[0],-1),feat_l_k.reshape(feat_l_k.size()[0],-1))
+#             Loss_contrast_l = 0
             
-            feat_q = projector_1(outputs_strong1[args.labeled_bs:])
-            feat_k = projector_2(outputs_strong2[args.labeled_bs:])
+            feat_q = projector_1(outputs_weak1[args.labeled_bs:])
+            feat_q.detach()
+            feat_k = projector_4(outputs_strong2[args.labeled_bs:])
+            Loss_contrast_u_1 = contrastive_loss_sup_criter(feat_q,feat_k)
             
-            Loss_contrast_u = 0
-            for i in range(len(feat_q)):
-                Loss_contrast_u += pixel_wise_contrastive_loss_criter(feat_q[i],feat_k[i])
-            Loss_contrast_u = Loss_contrast_u / len(feat_q)
+#             Loss_contrast_u_1 = 0
+#             for i in range(len(feat_q)):
+#                 Loss_contrast_u_1 += pixel_wise_contrastive_loss_criter(feat_q[i],feat_k[i])
+#             Loss_contrast_u_1 = Loss_contrast_u_1 / len(feat_q)
             
-            Loss_diff = loss_diff(
-                outputs_strong_soft1[args.labeled_bs:], outputs_strong_soft2[args.labeled_bs:],
-                len(outputs_strong_soft1[args.labeled_bs:]))
+#             Loss_contrast_u_1 = infoNCE_loss(feat_q.reshape(feat_q.size()[0],-1),feat_k.reshape(feat_k.size()[0],-1))
             
-            contrastive_loss = (Loss_contrast_l + Loss_contrast_u + Loss_diff)
+            feat_q = projector_2(outputs_weak2[args.labeled_bs:])
+            feat_q.detach()
+            feat_k = projector_3(outputs_strong1[args.labeled_bs:])
+            Loss_contrast_u_2 = contrastive_loss_sup_criter(feat_q,feat_k)
+#             Loss_contrast_u_2 = 0
+#             for i in range(len(feat_q)):
+#                 Loss_contrast_u_2 += pixel_wise_contrastive_loss_criter(feat_q[i],feat_k[i])
+#             Loss_contrast_u_2 = Loss_contrast_u_2 / len(feat_q)
+#             Loss_contrast_u_2 = infoNCE_loss(feat_q.reshape(feat_q.size()[0],-1),feat_k.reshape(feat_k.size()[0],-1))
             
-            loss = 0.5 * (fixmatch_loss + consistency_weight * contrastive_loss)
- 
+#             feat_q = projector_1(outputs_weak1[args.labeled_bs:])
+#             feat_k = projector_4(outputs_strong2[args.labeled_bs:])
+#             Loss_contrast_u_3 = infoNCE_loss(feat_q.reshape(feat_q.size()[0],-1),feat_k.reshape(feat_k.size()[0],-1))
+            
+#             Loss_contrast_u = Loss_contrast_u_1 + Loss_contrast_u_2 + Loss_contrast_u_3
+#             Loss_contrast_u = Loss_contrast_u_3
+#             Loss_contrast_u = 0
+#             for i in range(len(feat_q)):
+#                 Loss_contrast_u += pixel_wise_contrastive_loss_criter(feat_q[i],feat_k[i])
+#             Loss_contrast_u = Loss_contrast_u / len(feat_q)
+            
+            Loss_contrast_u = Loss_contrast_u_1 + Loss_contrast_u_2
+            contrastive_loss = (Loss_contrast_l + Loss_contrast_u)
+            #both
+#             loss = sup_loss + consistency_weight1 * (Loss_contrast_l + unsup_loss + consistency_weight2 *  Loss_contrast_u)
+            loss = sup_loss + consistency_weight1 * Loss_contrast_l + consistency_weight1 * unsup_loss + consistency_weight2 * Loss_contrast_u
+#             loss = 0.5 * (sup_loss + consistency_weight2 * unsup_loss + consistency_weight2 * contrastive_loss)
+
+            
             running_loss += loss
+            running_sup_loss += sup_loss
+            running_unsup_loss += unsup_loss
+#             running_comple_loss += comple_loss
             running_con_loss += contrastive_loss
             running_con_l_l += Loss_contrast_l
             running_con_l_u += Loss_contrast_u
-            running_con_diff += Loss_diff
 
             optimizer1.zero_grad()
             optimizer2.zero_grad()
-#             optimizer.zero_grad()
             
             loss.backward()
             
             optimizer1.step()
             optimizer2.step()
-#             optimizer.step()
-            
+            update_ema_variables(projector_3, projector_1, args.ema_decay, iter_num)
+            update_ema_variables(projector_4, projector_2, args.ema_decay, iter_num)
             # track batch-level error, used to update augmentation policy
             epoch_errors.append(0.5 * loss.item())
             
@@ -489,40 +545,41 @@ def train(args, snapshot_path):
                 param_group['lr'] = lr_
             for param_group in optimizer2.param_groups:
                 param_group['lr'] = lr_
-#             for param_group in optimizer.param_groups:
-#                 param_group['lr'] = lr_
                 
             iter_num = iter_num + 1
 
             writer.add_scalar("lr", lr_, iter_num)
-            writer.add_scalar("consistency_weight/consistency_weight", consistency_weight, iter_num)
+            writer.add_scalar("consistency_weight/consistency_weight1", consistency_weight1, iter_num)
+            writer.add_scalar("consistency_weight/consistency_weight2", consistency_weight2, iter_num)
             writer.add_scalar("loss/model_loss", loss, iter_num)
             logging.info("iteration %d : model loss : %f" % (iter_num, loss.item()))
 
-
-            if iter_num % 100 == 0:
-#                 # show org image
-#                 image_org = batch_org[1, 0:1, :, :]
-#                 writer.add_image("train/Image", image_org, iter_num)
+            if iter_num % 50 == 0:
+                idx  = args.labeled_bs
+                # show raw image
+                image = raw_batch[idx, 0:1, :, :]
+                writer.add_image("train/RawImage", image, iter_num)
                 # show weakly augmented image
-                image = weak_batch[1, 0:1, :, :]
+                image = weak_batch[idx, 0:1, :, :]
                 writer.add_image("train/WeakImage", image, iter_num)
                 # show strongly augmented image
-                image_strong = strong_batch[1, 0:1, :, :]
-                writer.add_image("train/StrongImage", image_strong, iter_num)
+                image_strong = strong_batch[idx, 0:1, :, :]
+                writer.add_image("train/StrongImage", image_strong, iter_num)                
                 # show model prediction (strong augment)
                 outputs_strong1 = torch.argmax(outputs_strong_soft1, dim=1, keepdim=True)
-                writer.add_image("train/model_Prediction1", outputs_strong1[1, ...] * 50, iter_num)
+                writer.add_image("train/model_Prediction1", outputs_strong1[idx, ...] * 50, iter_num)
                 outputs_strong2 = torch.argmax(outputs_strong_soft2, dim=1, keepdim=True)
-                writer.add_image("train/model_Prediction2", outputs_strong2[1, ...] * 50, iter_num)
+                writer.add_image("train/model_Prediction2", outputs_strong2[idx, ...] * 50, iter_num)
                 # show ground truth label
-                labs = label_batch[1, ...].unsqueeze(0) * 50
+                labs = label_batch_aug[idx, ...].unsqueeze(0) * 50
                 writer.add_image("train/GroundTruth", labs, iter_num)
                 # show generated pseudo label
-                pseudo_labs1 = pseudo_outputs1[1, ...].unsqueeze(0) * 50
+                pseudo_labs1 = pseudo_outputs1[idx, ...].unsqueeze(0) * 50
                 writer.add_image("train/PseudoLabel1", pseudo_labs1, iter_num)
-                pseudo_labs2 = pseudo_outputs2[1, ...].unsqueeze(0) * 50
+                pseudo_labs2 = pseudo_outputs2[idx, ...].unsqueeze(0) * 50
                 writer.add_image("train/PseudoLabel2", pseudo_labs2, iter_num)
+                pseudo_labs = pseudo_outputs[idx, ...].unsqueeze(0) * 50
+                writer.add_image("train/PseudoLabel", pseudo_labs, iter_num)
                 
             if iter_num > 0 and iter_num % 200 == 0:
                 model1.eval()
@@ -548,14 +605,17 @@ def train(args, snapshot_path):
 
                 if performance1 > best_performance1:
                     best_performance1 = performance1
-                    if performance1 > 0.85:
+                    if performance1 > 0:
                         save_mode_path = os.path.join(snapshot_path,
                                                       'model1_iter_{}_dice_{}.pth'.format(
                                                           iter_num, round(best_performance1, 4)))
                         save_best = os.path.join(snapshot_path,
                                                  '{}_best_model1.pth'.format(args.model))
-                        torch.save(model1.state_dict(), save_mode_path)
-                        torch.save(model1.state_dict(), save_best)
+
+#                         util.save_checkpoint(epoch_num, model1, optimizer1, loss, save_mode_path)
+#                         util.save_checkpoint(epoch_num, model1, optimizer1, loss, save_best)
+                        util.save_checkpoint(epoch_num, model1, optimizer1, projector_1, projector_3, cta, best_performance1, save_mode_path)
+                        util.save_checkpoint(epoch_num, model1, optimizer1, projector_1, projector_3, cta, best_performance1, save_best)
 
                 logging.info(
                     'iteration %d : model1_mean_dice : %f model1_mean_hd95 : %f' % (iter_num, performance1, mean_hd951))
@@ -584,14 +644,17 @@ def train(args, snapshot_path):
 
                 if performance2 > best_performance2:
                     best_performance2 = performance2
-                    if performance1 > 0.85:
+                    if performance2 > 0:
                         save_mode_path = os.path.join(snapshot_path,
                                                       'model2_iter_{}_dice_{}.pth'.format(
                                                           iter_num, round(best_performance2, 4)))
                         save_best = os.path.join(snapshot_path,
                                                  '{}_best_model2.pth'.format(args.model))
-                        torch.save(model2.state_dict(), save_mode_path)
-                        torch.save(model2.state_dict(), save_best)
+
+#                         util.save_checkpoint(epoch_num, model2, optimizer2, loss, save_mode_path)
+#                         util.save_checkpoint(epoch_num, model2, optimizer2, loss, save_best)
+                        util.save_checkpoint(epoch_num, model2, optimizer2, projector_2, projector_4, cta, best_performance2, save_mode_path)
+                        util.save_checkpoint(epoch_num, model2, optimizer2, projector_2, projector_4, cta, best_performance2, save_best)
 
                 logging.info(
                     'iteration %d : model2_mean_dice : %f model2_mean_hd95 : %f' % (iter_num, performance2, mean_hd952))
@@ -602,12 +665,16 @@ def train(args, snapshot_path):
             if iter_num % 3000 == 0:
                 save_mode_path = os.path.join(
                     snapshot_path, 'model1_iter_' + str(iter_num) + '.pth')
-                torch.save(model1.state_dict(), save_mode_path)
+
+#                 util.save_checkpoint(epoch_num, model1, optimizer1, loss, save_mode_path)
+                util.save_checkpoint(epoch_num, model1, optimizer1, projector_1, projector_3, cta, best_performance1, save_mode_path)
                 logging.info("save model1 to {}".format(save_mode_path))
 
                 save_mode_path = os.path.join(
                     snapshot_path, 'model2_iter_' + str(iter_num) + '.pth')
-                torch.save(model2.state_dict(), save_mode_path)
+
+#                 util.save_checkpoint(epoch_num, model2, optimizer2, loss, save_mode_path)
+                util.save_checkpoint(epoch_num, model2, optimizer2, projector_2, projector_4, cta, best_performance2, save_mode_path)
                 logging.info("save model2 to {}".format(save_mode_path))
 
             if iter_num >= max_iterations:
@@ -618,29 +685,40 @@ def train(args, snapshot_path):
             break
             
         epoch_loss = running_loss / len(trainloader)
+        epoch_sup_loss = running_sup_loss / len(trainloader)
+        epoch_unsup_loss = running_unsup_loss / len(trainloader)
+#         epoch_comple_loss = running_comple_loss / len(trainloader)
         epoch_con_loss = running_con_loss / len(trainloader)
         epoch_con_loss_u = running_con_l_u / len(trainloader)
         epoch_con_loss_l = running_con_l_l / len(trainloader)
-        epoch_con_diff = running_con_diff / len(trainloader)
         
         logging.info('{} Epoch [{:03d}/{:03d}]'.
                              format(datetime.now(), epoch_num, max_epoch))
         logging.info('Train loss: {}'.format(epoch_loss))
         writer.add_scalar('Train/Loss', epoch_loss, epoch_num)
+        
+        logging.info('Train sup loss: {}'.format(epoch_sup_loss))
+        writer.add_scalar('Train/sup_loss', epoch_sup_loss, epoch_num)
+        
+        logging.info('Train unsup loss: {}'.format(epoch_unsup_loss))
+        writer.add_scalar('Train/unsup_loss', epoch_unsup_loss, epoch_num)
+        
+#         logging.info('Train comple loss: {}'.format(epoch_comple_loss))
+#         writer.add_scalar('Train/comple_loss', epoch_comple_loss, epoch_num)
+        
         logging.info('Train contrastive loss: {}'.format(epoch_con_loss))
         writer.add_scalar('Train/contrastive_loss', epoch_con_loss, epoch_num)
         
-        logging.info('Train weighted contrastive loss: {}'.format(epoch_con_loss*consistency_weight))
-        writer.add_scalar('Train/weighted_contrastive_loss', epoch_con_loss*consistency_weight, epoch_num)
+        
+        
+        logging.info('Train weighted contrastive loss: {}'.format(consistency_weight1 * Loss_contrast_l + consistency_weight2 *  Loss_contrast_u))
+        writer.add_scalar('Train/weighted_contrastive_loss', consistency_weight1 * Loss_contrast_l + consistency_weight2 *  Loss_contrast_u, epoch_num)
         
         logging.info('Train contrastive loss l: {}'.format(epoch_con_loss_l))
         writer.add_scalar('Train/contrastive_loss_l', epoch_con_loss_l, epoch_num)
         
         logging.info('Train contrastive loss u: {}'.format(epoch_con_loss_u))
         writer.add_scalar('Train/contrastive_loss_u', epoch_con_loss_u, epoch_num)
-        
-        logging.info('Train contrastive loss diff: {}'.format(epoch_con_diff))
-        writer.add_scalar('Train/contrastive_loss_diff', epoch_con_diff, epoch_num)
         
         # update policy parameter bins for sampling
         mean_epoch_error = np.mean(epoch_errors)

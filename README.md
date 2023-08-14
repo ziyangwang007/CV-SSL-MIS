@@ -36,7 +36,7 @@ cd code
 You can choose model(unet/vnet/pnet...), dataset(acdc/brats), experiment name(the path of saving your model weights and inference), iteration number, batch size and etc in your command line, or leave it with default option.
 
 
-Fully Supervised CNN (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
+Fully Supervised - CNN (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
 ```
 python train_fully_supervised_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
@@ -44,23 +44,35 @@ python train_fully_supervised_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX
 ```
 
 
-Mean Teacher CNN -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
+Mean Teacher - CNN -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
 ```
 python train_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
 python train_mean_teacher_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-Uncertainty-Aware Mean Teacher CNN -> [Paper Link](https://arxiv.org/pdf/1907.07034.pdf)
+Uncertainty-Aware Mean Teacher - CNN -> [Paper Link](https://arxiv.org/pdf/1907.07034.pdf)
 ```
 python train_uncertainty_aware_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 
 python train_uncertainty_aware_mean_teacher_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-Uncertainty-Aware Mean Teacher ViT  -> [Paper Link](https://link.springer.com/chapter/10.1007/978-3-031-12053-4_37)
+Uncertainty-Aware Mean Teacher - ViT  -> [Paper Link](https://link.springer.com/chapter/10.1007/978-3-031-12053-4_37)
 ```
 python train_uncertainty_aware_mean_teacher_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
+Adversarial - CNN -> [Paper Link](https://arxiv.org/pdf/1802.07934.pdf)
+```
+python train_adversarial_network_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+
+python train_adversarial_network_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
+```
+
+Adversarial - ViT 
+```
+python train_adversarial_network_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
 Cross Pseudo Supervision CNN -> [Paper Link](https://arxiv.org/pdf/2106.01226.pdf)
@@ -80,9 +92,14 @@ Cross Pseudo Supervision - ViT  -> [Paper Link](https://ieeexplore.ieee.org/abst
 python train_cross_pseudo_supervision_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Contrastive Learning - Cross Pseudo Supervision - ViT CNN 
+Contrastive Learning - Cross Pseudo Supervision - CNN ViT
 ```
 python train_Contrastive_Cross_CNN_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
+Contrastive Learning - Cross Pseudo Supervision - CNN -> [Paper Link](https://ieeexplore.ieee.org/abstract/document/10098633/) 
+```
+python train_Contrastive_Cross_CNN_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
 Fixmatch - CNN -> [Paper Link](https://arxiv.org/pdf/2001.07685.pdf)
@@ -90,9 +107,9 @@ Fixmatch - CNN -> [Paper Link](https://arxiv.org/pdf/2001.07685.pdf)
 python train_Fixmatch_CNN_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Contrastive Learning - Fixmatch - ViT CNN 
+Contrastive Learning - Fixmatch - Mean Teacher - ViT -> Paper TBC (after October)
 ```
-python train_Contrastive_Fixmatch_CNN_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+python train_Contrastive_Consistency_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
 Adversarial Consistency ViT  -> [Paper Link](https://bmvc2022.mpi-inf.mpg.de/1002.pdf)
@@ -110,7 +127,7 @@ Triple-View Segmentation CNN -> [Paper Link](https://arxiv.org/pdf/2208.06303.pd
 python train_tripleview_2D(demo).py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Examiner-Student-Teacher CNN 
+Examiner-Student-Teacher CNN -> Paper TBC (after October)
 ```
 python train_exam_student_teacher_3D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
