@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
                     default='../data/ACDC', help='Name of Experiment')
 parser.add_argument('--exp', type=str,
-                    default='ACDC/Adversarial_Network', help='experiment_name')
+                    default='ACDC/Deep_Co_Training', help='experiment_name')
 parser.add_argument('--model', type=str,
                     default='unet', help='model_name')
 parser.add_argument('--max_iterations', type=int,
@@ -43,13 +43,12 @@ parser.add_argument('--deterministic', type=int,  default=1,
                     help='whether use deterministic training')
 parser.add_argument('--base_lr', type=float,  default=0.01,
                     help='segmentation network learning rate')
-parser.add_argument('--DAN_lr', type=float,  default=0.0001,
-                    help='DAN learning rate')
 parser.add_argument('--patch_size', type=list,  default=[256, 256],
                     help='patch size of network input')
 parser.add_argument('--seed', type=int,  default=1337, help='random seed')
 parser.add_argument('--num_classes', type=int,  default=4,
                     help='output channel of network')
+
 # label and unlabel
 parser.add_argument('--labeled_bs', type=int, default=12,
                     help='labeled_batch_size per gpu')
@@ -69,7 +68,7 @@ args = parser.parse_args()
 def patients_to_slices(dataset, patiens_num):
     ref_dict = None
     if "ACDC" in dataset:
-        ref_dict = {'1':14,'2':28, "3": 68, "7": 136,
+        ref_dict = {'1':14,'2':28,"3": 68, "7": 136,
                     "14": 256, "21": 396, "28": 512, "35": 664, "140": 1310}
     else:
         print("Error")
@@ -91,9 +90,6 @@ def train(args, snapshot_path):
         random.seed(args.seed + worker_id)
 
     model = net_factory(net_type=args.model, in_chns=1, class_num=num_classes)
-
-    DAN = FCDiscriminator(num_classes=num_classes)
-    DAN = DAN.cuda()
 
     db_train = BaseDataSets(base_dir=args.root_path, split="train", num=None, transform=transforms.Compose([
         RandomGenerator(args.patch_size)
@@ -119,8 +115,7 @@ def train(args, snapshot_path):
 
     optimizer = optim.SGD(model.parameters(), lr=base_lr,
                           momentum=0.9, weight_decay=0.0001)
-    DAN_optimizer = optim.Adam(
-        DAN.parameters(), lr=args.DAN_lr, betas=(0.9, 0.99))
+
     ce_loss = CrossEntropyLoss()
     dice_loss = losses.DiceLoss(num_classes)
 
@@ -136,14 +131,17 @@ def train(args, snapshot_path):
 
             volume_batch, label_batch = sampled_batch['image'], sampled_batch['label']
             volume_batch, label_batch = volume_batch.cuda(), label_batch.cuda()
-
-            DAN_target = torch.tensor([0] * args.batch_size).cuda()
-            DAN_target[:args.labeled_bs] = 1
-            model.train()
-            DAN.eval()
+            unlabeled_volume_batch = volume_batch[args.labeled_bs:]
 
             outputs = model(volume_batch)
             outputs_soft = torch.softmax(outputs, dim=1)
+
+            rot_times = random.randrange(0,4)
+
+            rotated_unlabeled_volume_batch = torch.rot90(unlabeled_volume_batch, rot_times, [2,3])
+
+            unlabeled_rot_outputs = model(rotated_unlabeled_volume_batch)
+            unlabeled_rot_outputs_soft = torch.softmax(unlabeled_rot_outputs, dim=1)
 
             loss_ce = ce_loss(outputs[:args.labeled_bs],
                               label_batch[:][:args.labeled_bs].long())
@@ -152,27 +150,13 @@ def train(args, snapshot_path):
             supervised_loss = 0.5 * (loss_dice + loss_ce)
 
             consistency_weight = get_current_consistency_weight(iter_num//150)
-            DAN_outputs = DAN(
-                outputs_soft[args.labeled_bs:], volume_batch[args.labeled_bs:])
 
-            consistency_loss = F.cross_entropy(
-                DAN_outputs, (DAN_target[:args.labeled_bs]).long())
+            consistency_loss = 0.5 * (torch.mean((unlabeled_rot_outputs_soft.detach() - torch.rot90(outputs_soft[args.labeled_bs:], rot_times, [2,3]))**2) + torch.mean((unlabeled_rot_outputs_soft - torch.rot90(outputs_soft[args.labeled_bs:].detach(), rot_times, [2,3]))**2))
+
             loss = supervised_loss + consistency_weight * consistency_loss
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            model.eval()
-            DAN.train()
-            with torch.no_grad():
-                outputs = model(volume_batch)
-                outputs_soft = torch.softmax(outputs, dim=1)
-
-            DAN_outputs = DAN(outputs_soft, volume_batch)
-            DAN_loss = F.cross_entropy(DAN_outputs, DAN_target.long())
-            DAN_optimizer.zero_grad()
-            DAN_loss.backward()
-            DAN_optimizer.step()
 
             lr_ = base_lr * (1.0 - iter_num / max_iterations) ** 0.9
             for param_group in optimizer.param_groups:

@@ -20,12 +20,15 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 git clone https://github.com/ziyangwang007/CV-SSL-MIS.git 
 cd CV-SSL-MIS
 ```
-2. Download the pre-processed data and put the data in `../data/BraTS2019` or `../data/ACDC`. In this project, we use ACDC for 2D purpose, and BraTS for 3D purpose. You can download the dataset with the list of labeled training, unlabeled training, validation, and testing slices as following:
+2. Download the pre-processed data and put the data in `../data/BraTS2019` or `../data/ACDC` or `../data/TotalSegmentator`. In this project, we use ACDC, TotalSegmentator for 2D purpose, and BraTS for 3D purpose. You can download the dataset with the list of labeled training, unlabeled training, validation, and testing slices as following:
 
 
 ACDC from [Google Drive Link](https://drive.google.com/file/d/1F3JzBSIURtFJkfcExBcT6Hu7Ar5_f8uv/view?usp=sharing), or [Baidu Netdisk Link](https://pan.baidu.com/s/1LS6VHujD8kvuQikbydOibQ) with passcode: 'kafc'.
 
 BraTS from [Google Drive Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc6xQ/view?usp=share_link), or [Baidu Netdisk Link](https://pan.baidu.com/s/1Z1pSRIfx_41JG3o1KwS27A) with passcode: 'kbj3'.
+
+TotalSegmentator from [zenodo](https://zenodo.org/record/6802613)
+
 
 3. Train the model
 
@@ -43,6 +46,10 @@ python train_fully_supervised_2D.py --root_path ../data/ACDC --exp ACDC/XXX --mo
 python train_fully_supervised_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
+Fully Supervised - ViT (SwinUNet) -> [Paper Link](https://arxiv.org/abs/2105.05537)
+```
+python train_fully_supervised_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
 
 Mean Teacher - CNN -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
 ```
@@ -112,9 +119,31 @@ Contrastive Learning - Fixmatch - Mean Teacher - ViT -> Paper TBC (after October
 python train_Contrastive_Consistency_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Adversarial Consistency ViT  -> [Paper Link](https://bmvc2022.mpi-inf.mpg.de/1002.pdf)
+Adversarial Consistency - ViT  -> [Paper Link](https://bmvc2022.mpi-inf.mpg.de/1002.pdf)
 ```
 python train_adversarial_consistency_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
+Co-Training - CNN -> [Paper Link](https://arxiv.org/pdf/1803.05984.pdf)
+```
+python train_deep_co_training_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
+Co-Training - ViT 
+```
+python train_deep_co_training_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
+MixUp - CNN -> [Paper Link](https://arxiv.org/abs/1903.03825)
+```
+python train_interpolation_consistency_training_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+
+python train_interpolation_consistency_training_3D.py --root_path ../data/BraTS2019 --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
+```
+
+MixUp - ViT 
+```
+python train_interpolation_consistency_training_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
 Semi CNN-ViT  -> [Paper Link](https://arxiv.org/pdf/2208.06449.pdf)
@@ -134,7 +163,11 @@ python train_exam_student_teacher_3D.py --root_path ../data/ACDC --exp ACDC/XXX 
 
 4. Test the model
 ```
-python test_XXX.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
+python test_2D_fully.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
+
+python test_3D.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
+
+python test_CNNVIT.py -root_path ../data/XXX --exp ACDC/XXX -model XXX --num_classes 4 --labeled_num XXX
 ```
 Check trained model and inference
 ```

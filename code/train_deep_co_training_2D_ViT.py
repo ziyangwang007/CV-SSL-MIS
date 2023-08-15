@@ -19,6 +19,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.utils import make_grid
 from tqdm import tqdm
+from config import get_config
+from networks.vision_transformer import SwinUnet as ViT_seg
 
 from dataloaders import utils
 from dataloaders.dataset import (BaseDataSets, RandomGenerator,
@@ -32,7 +34,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
                     default='../data/ACDC', help='Name of Experiment')
 parser.add_argument('--exp', type=str,
-                    default='ACDC/Adversarial_Network', help='experiment_name')
+                    default='ACDC/Deep_Co_Training_ViT', help='experiment_name')
 parser.add_argument('--model', type=str,
                     default='unet', help='model_name')
 parser.add_argument('--max_iterations', type=int,
@@ -43,17 +45,42 @@ parser.add_argument('--deterministic', type=int,  default=1,
                     help='whether use deterministic training')
 parser.add_argument('--base_lr', type=float,  default=0.01,
                     help='segmentation network learning rate')
-parser.add_argument('--DAN_lr', type=float,  default=0.0001,
-                    help='DAN learning rate')
-parser.add_argument('--patch_size', type=list,  default=[256, 256],
+parser.add_argument('--patch_size', type=list,  default=[224, 224],
                     help='patch size of network input')
 parser.add_argument('--seed', type=int,  default=1337, help='random seed')
 parser.add_argument('--num_classes', type=int,  default=4,
                     help='output channel of network')
+parser.add_argument(
+    '--cfg', type=str, default="../code/configs/swin_tiny_patch4_window7_224_lite.yaml", help='path to config file', )
+parser.add_argument(
+    "--opts",
+    help="Modify config options by adding 'KEY VALUE' pairs. ",
+    default=None,
+    nargs='+',
+)
+parser.add_argument('--zip', action='store_true',
+                    help='use zipped dataset instead of folder dataset')
+parser.add_argument('--cache-mode', type=str, default='part', choices=['no', 'full', 'part'],
+                    help='no: no cache, '
+                         'full: cache all data, '
+                         'part: sharding the dataset into nonoverlapping pieces and only cache one piece')
+parser.add_argument('--resume', help='resume from checkpoint')
+parser.add_argument('--accumulation-steps', type=int,
+                    help="gradient accumulation steps")
+parser.add_argument('--use-checkpoint', action='store_true',
+                    help="whether to use gradient checkpointing to save memory")
+parser.add_argument('--amp-opt-level', type=str, default='O1', choices=['O0', 'O1', 'O2'],
+                    help='mixed precision opt level, if O0, no amp is used')
+parser.add_argument('--tag', help='tag of experiment')
+parser.add_argument('--eval', action='store_true',
+                    help='Perform evaluation only')
+parser.add_argument('--throughput', action='store_true',
+                    help='Test throughput only')
+
 # label and unlabel
-parser.add_argument('--labeled_bs', type=int, default=12,
+parser.add_argument('--labeled_bs', type=int, default=7,
                     help='labeled_batch_size per gpu')
-parser.add_argument('--labeled_num', type=int, default=3,
+parser.add_argument('--labeled_num', type=int, default=7,
                     help='labeled data')
 # costs
 parser.add_argument('--ema_decay', type=float,  default=0.99, help='ema_decay')
@@ -64,13 +91,14 @@ parser.add_argument('--consistency', type=float,
 parser.add_argument('--consistency_rampup', type=float,
                     default=200.0, help='consistency_rampup')
 args = parser.parse_args()
+config = get_config(args)
 
 
 def patients_to_slices(dataset, patiens_num):
     ref_dict = None
     if "ACDC" in dataset:
-        ref_dict = {'1':14,'2':28, "3": 68, "7": 136,
-                    "14": 256, "21": 396, "28": 512, "35": 664, "140": 1310}
+        ref_dict = {'1':14,'2':28,"3": 68, "7": 136,
+                    "14": 256, "21": 396, "28": 512, "35": 664,"60": 786,"70": 917,"80": 1048,"90": 1179, "140": 1300}
     else:
         print("Error")
     return ref_dict[str(patiens_num)]
@@ -90,14 +118,19 @@ def train(args, snapshot_path):
     def worker_init_fn(worker_id):
         random.seed(args.seed + worker_id)
 
-    model = net_factory(net_type=args.model, in_chns=1, class_num=num_classes)
+    # model = net_factory(net_type=args.model, in_chns=1, class_num=num_classes)
 
-    DAN = FCDiscriminator(num_classes=num_classes)
-    DAN = DAN.cuda()
+
+    model = ViT_seg(config, img_size=args.patch_size, num_classes=args.num_classes).cuda()
+    model.load_from(config)
+
+
+
 
     db_train = BaseDataSets(base_dir=args.root_path, split="train", num=None, transform=transforms.Compose([
         RandomGenerator(args.patch_size)
     ]))
+    db_val = BaseDataSets(base_dir=args.root_path, split="val")
 
     total_slices = len(db_train)
     labeled_slice = patients_to_slices(args.root_path, args.labeled_num)
@@ -111,16 +144,16 @@ def train(args, snapshot_path):
     trainloader = DataLoader(db_train, batch_sampler=batch_sampler,
                              num_workers=16, pin_memory=True, worker_init_fn=worker_init_fn)
 
-    db_val = BaseDataSets(base_dir=args.root_path, split="val")
+    model.train()
+    
     valloader = DataLoader(db_val, batch_size=1, shuffle=False,
                            num_workers=1)
 
-    model.train()
+
 
     optimizer = optim.SGD(model.parameters(), lr=base_lr,
                           momentum=0.9, weight_decay=0.0001)
-    DAN_optimizer = optim.Adam(
-        DAN.parameters(), lr=args.DAN_lr, betas=(0.9, 0.99))
+
     ce_loss = CrossEntropyLoss()
     dice_loss = losses.DiceLoss(num_classes)
 
@@ -136,14 +169,17 @@ def train(args, snapshot_path):
 
             volume_batch, label_batch = sampled_batch['image'], sampled_batch['label']
             volume_batch, label_batch = volume_batch.cuda(), label_batch.cuda()
-
-            DAN_target = torch.tensor([0] * args.batch_size).cuda()
-            DAN_target[:args.labeled_bs] = 1
-            model.train()
-            DAN.eval()
+            unlabeled_volume_batch = volume_batch[args.labeled_bs:]
 
             outputs = model(volume_batch)
             outputs_soft = torch.softmax(outputs, dim=1)
+
+            rot_times = random.randrange(0,4)
+
+            rotated_unlabeled_volume_batch = torch.rot90(unlabeled_volume_batch, rot_times, [2,3])
+
+            unlabeled_rot_outputs = model(rotated_unlabeled_volume_batch)
+            unlabeled_rot_outputs_soft = torch.softmax(unlabeled_rot_outputs, dim=1)
 
             loss_ce = ce_loss(outputs[:args.labeled_bs],
                               label_batch[:][:args.labeled_bs].long())
@@ -152,27 +188,13 @@ def train(args, snapshot_path):
             supervised_loss = 0.5 * (loss_dice + loss_ce)
 
             consistency_weight = get_current_consistency_weight(iter_num//150)
-            DAN_outputs = DAN(
-                outputs_soft[args.labeled_bs:], volume_batch[args.labeled_bs:])
 
-            consistency_loss = F.cross_entropy(
-                DAN_outputs, (DAN_target[:args.labeled_bs]).long())
+            consistency_loss = 0.5 * (torch.mean((unlabeled_rot_outputs_soft.detach() - torch.rot90(outputs_soft[args.labeled_bs:], rot_times, [2,3]))**2) + torch.mean((unlabeled_rot_outputs_soft - torch.rot90(outputs_soft[args.labeled_bs:].detach(), rot_times, [2,3]))**2))
+
             loss = supervised_loss + consistency_weight * consistency_loss
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            model.eval()
-            DAN.train()
-            with torch.no_grad():
-                outputs = model(volume_batch)
-                outputs_soft = torch.softmax(outputs, dim=1)
-
-            DAN_outputs = DAN(outputs_soft, volume_batch)
-            DAN_loss = F.cross_entropy(DAN_outputs, DAN_target.long())
-            DAN_optimizer.zero_grad()
-            DAN_loss.backward()
-            DAN_optimizer.step()
 
             lr_ = base_lr * (1.0 - iter_num / max_iterations) ** 0.9
             for param_group in optimizer.param_groups:
@@ -207,7 +229,7 @@ def train(args, snapshot_path):
                 metric_list = 0.0
                 for i_batch, sampled_batch in enumerate(valloader):
                     metric_i = test_single_volume(
-                        sampled_batch["image"], sampled_batch["label"], model, classes=num_classes)
+                        sampled_batch["image"], sampled_batch["label"], model, classes=num_classes, patch_size=args.patch_size)
                     metric_list += np.array(metric_i)
                 metric_list = metric_list / len(db_val)
                 for class_i in range(num_classes-1):
