@@ -60,6 +60,12 @@ python train_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model 
 python train_mean_teacher_3D.py --root_path ../data/BraTS2019 --exp BraTS/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
+Mean Teacher - ViT -> [Paper Link](https://link.springer.com/chapter/10.1007/978-3-031-12053-4_37)
+```
+python train_mean_teacher_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
+
 Uncertainty-Aware Mean Teacher - CNN -> [Paper Link](https://arxiv.org/pdf/1907.07034.pdf)
 ```
 python train_uncertainty_aware_mean_teacher_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
