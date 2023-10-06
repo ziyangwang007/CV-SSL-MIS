@@ -122,7 +122,7 @@ Fixmatch - CNN -> [Paper Link](https://arxiv.org/pdf/2001.07685.pdf)
 python train_Fixmatch_CNN_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Contrastive Learning - Fixmatch - Mean Teacher - ViT -> Paper TBC (after October)
+Contrastive Learning - Fixmatch - Mean Teacher - ViT -> [Paper Link](https://openaccess.thecvf.com/content/ICCV2023W/NIVT/papers/Wang_Dual-Contrastive_Dual-Consistency_Dual-Transformer_A_Semi-Supervised_Approach_to_Medical_Image_Segmentation_ICCVW_2023_paper.pdf)
 ```
 python train_Contrastive_Consistency_ViT_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
