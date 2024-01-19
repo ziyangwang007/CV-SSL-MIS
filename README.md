@@ -13,7 +13,7 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 - [x] Various Semi-Supervised Frameworks 
 - [x] 3D Segmentation ViT Backbone Networks
 - [x] 2D SwinUNet
-- [ ] 2D Segmentor
+- [ ] 2D SegFormer
 - [ ] Totalsegmentor dataset
 
 ## Usage
@@ -188,6 +188,6 @@ cd model
 
 ## Acknowledgement
 
-This code is mainly based on [SSL4MIS](https://github.com/HiLab-git/SSL4MIS).
+This code is mainly based on [SSL4MIS](https://github.com/HiLab-git/SSL4MIS), [MONAI](https://github.com/Project-MONAI/research-contributions/tree/main).
 
 Some of the other code is from [SegFormer](https://github.com/NVlabs/SegFormer), [SwinUNet](https://github.com/HuCaoFighting/Swin-Unet), [Segmentation Models](https://github.com/qubvel/segmentation_models.pytorch), [UAMT](https://github.com/yulequan/UA-MT), [nnUNet](https://github.com/MIC-DKFZ/nnUNet).
