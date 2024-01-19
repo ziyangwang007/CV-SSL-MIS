@@ -3,6 +3,7 @@ from networks.vnet import VNet
 from networks.VoxResNet import VoxResNet
 from networks.attention_unet import Attention_UNet
 from networks.nnunet import initialize_network
+from networks.unetr import UNETR
 
 
 def net_factory_3d(net_type="unet_3D", in_chns=1, class_num=2):
@@ -18,6 +19,20 @@ def net_factory_3d(net_type="unet_3D", in_chns=1, class_num=2):
                    normalization='batchnorm', has_dropout=True).cuda()
     elif net_type == "nnUNet":
         net = initialize_network(num_classes=class_num).cuda()
+    elif net_type == "unetr":
+        net = UNETR(
+                    in_channels=1,
+                    out_channels=class_num,
+                    img_size=(96, 96, 96),
+                    feature_size=16,
+                    hidden_size=768,
+                    mlp_dim=3072,
+                    num_heads=12,
+                    pos_embed='perceptron',
+                    norm_name='instance',
+                    conv_block=True,
+                    res_block=True,
+                    dropout_rate=0.0).cuda()
     else:
         net = None
     return net

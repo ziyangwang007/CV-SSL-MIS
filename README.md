@@ -4,14 +4,17 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 ## Requirements
 * [Pytorch]
-* Some basic python packages such as Numpy, Scikit-image, SimpleITK, Scipy, Medpy ......
+* [MONAI]
+* Some basic python packages: Numpy, Scikit-image, SimpleITK, Scipy, Medpy, nibabel, tqdm ......
 
 ## News and To-do List
 - [x] Contrastive Learning
 - [x] Various Segmentation Backbone Networks 
 - [x] Various Semi-Supervised Frameworks 
-- [ ] SegFormer
-- [ ] More Dataset
+- [x] 3D Segmentation ViT Backbone Networks
+- [x] 2D SwinUNet
+- [ ] 2D Segmentor
+- [ ] Totalsegmentor dataset
 
 ## Usage
 
@@ -38,7 +41,7 @@ TotalSegmentator from [zenodo](https://zenodo.org/record/6802613)
 cd code
 ```
 
-You can choose model(unet/vnet/pnet...) by `'--model'`, dataset(acdc/brats) by `'--root_path'`, ratio of labeled/unlabel training set(10%, 20%, 30%, 50%) by `'--labeled_num'`, experiment name(the path of saving your model weights and inference) by `'--exp'`, iteration number, batch size, multi-class classification and etc in your command line, or leave it with default option.
+You can choose model(unet/vnet/pnet/unetr...) by `'--model'`, dataset(acdc/brats) by `'--root_path'`, ratio of labeled/unlabel training set(10%, 20%, 30%, 50%) by `'--labeled_num'`, experiment name(the path of saving your model weights and inference) by `'--exp'`, iteration number, batch size, multi-class classification and etc in your command line, or leave it with default option.
 
 
 Fully Supervised - CNN (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
