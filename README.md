@@ -11,9 +11,8 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 - [x] Contrastive Learning
 - [x] Various Segmentation Backbone Networks 
 - [x] Various Semi-Supervised Frameworks 
-- [x] 3D Segmentation ViT Backbone Networks
+- [x] 3D UNETR
 - [x] 2D SwinUNet
-- [ ] 2D SegFormer
 - [ ] Totalsegmentor dataset
 
 ## Usage
@@ -30,9 +29,7 @@ ACDC from [Google Drive Link](https://drive.google.com/file/d/1F3JzBSIURtFJkfcEx
 
 BraTS from [Google Drive Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc6xQ/view?usp=share_link), or [Baidu Netdisk Link](https://pan.baidu.com/s/1Z1pSRIfx_41JG3o1KwS27A) with passcode: 'kbj3'.
 
-TotalSegmentator from [zenodo](https://zenodo.org/record/6802613)
-
-
+TotalSegmentator from [zenodo](https://zenodo.org/record/6802613), or [Baidu Netdisk Link](https://pan.baidu.com/s/1LrScKvcAXG6h3qsafeaKPw) with passcode: 'm1d8'.
 
 
 3. Train the model
