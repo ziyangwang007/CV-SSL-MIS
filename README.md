@@ -41,16 +41,25 @@ cd code
 You can choose model(unet/vnet/pnet/unetr...) by `'--model'`, dataset(acdc/brats) by `'--root_path'`, ratio of labeled/unlabel training set(10%, 20%, 30%, 50%) by `'--labeled_num'`, experiment name(the path of saving your model weights and inference) by `'--exp'`, iteration number, batch size, multi-class classification and etc in your command line, or leave it with default option.
 
 
-Fully Supervised - CNN (UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
+Fully Supervised - CNN (2D UNet) -> [Paper Link](https://arxiv.org/pdf/1505.04597.pdf)
 ```
 python train_fully_supervised_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
 
+
+Fully Supervised - CNN (3D UNet) -> [Paper Link](https://arxiv.org/abs/1606.06650)
+```
 python train_fully_supervised_3D.py --root_path ../data/BraTS2019 --exp BraTS/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
-Fully Supervised - ViT (SwinUNet) -> [Paper Link](https://arxiv.org/abs/2105.05537)
+Fully Supervised - ViT (2D SwinUNet) -> [Paper Link](https://arxiv.org/abs/2105.05537)
 ```
 python train_fully_supervised_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+```
+
+Fully Supervised - ViT (3D UNETR) -> [Paper Link](https://arxiv.org/abs/2103.10504)
+```
+python train_fully_supervised_3D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
 Mean Teacher - CNN -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
@@ -164,7 +173,7 @@ Triple-View Segmentation CNN -> [Paper Link](https://arxiv.org/pdf/2208.06303.pd
 python train_tripleview_2D(demo).py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
 
-Examiner-Student-Teacher CNN -> Paper TBC (after October)
+Examiner-Student-Teacher CNN -> [Paper Link](https://link.springer.com/chapter/10.1007/978-3-031-44917-8_17)
 ```
 python train_exam_student_teacher_3D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
