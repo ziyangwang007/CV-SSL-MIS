@@ -4,7 +4,7 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 ## Requirements
 * Pytorch, MONAI 
-* Some basic python packages: Numpy, Scikit-image, SimpleITK, Scipy, Medpy, nibabel, tqdm ......
+* Some basic python packages: Torchio, Numpy, Scikit-image, SimpleITK, Scipy, Medpy, nibabel, tqdm ......
 
 ## News and To-do List
 - [x] Contrastive Learning
