@@ -59,7 +59,7 @@ python train_fully_supervised_2D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX 
 
 Fully Supervised - ViT (3D UNETR) -> [Paper Link](https://arxiv.org/abs/2103.10504)
 ```
-python train_fully_supervised_3D_ViT.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
+python train_fully_supervised_3D_ViT.py --root_path ../data/BraTS2019 --exp BraTS/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 2 --labeled_num XXX
 ```
 
 Mean Teacher - CNN -> [Paper Link](https://arxiv.org/pdf/1703.01780.pdf)
