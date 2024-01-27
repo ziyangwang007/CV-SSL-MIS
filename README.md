@@ -3,8 +3,7 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 
 ## Requirements
-* [Pytorch]
-* [MONAI]
+* Pytorch, MONAI 
 * Some basic python packages: Numpy, Scikit-image, SimpleITK, Scipy, Medpy, nibabel, tqdm ......
 
 ## News and To-do List
@@ -29,7 +28,7 @@ ACDC from [Google Drive Link](https://drive.google.com/file/d/1F3JzBSIURtFJkfcEx
 
 BraTS from [Google Drive Link](https://drive.google.com/file/d/1erKoNzknobgn7gZYEXylsJFYqq-gc6xQ/view?usp=share_link), or [Baidu Netdisk Link](https://pan.baidu.com/s/1Z1pSRIfx_41JG3o1KwS27A) with passcode: 'kbj3'.
 
-TotalSegmentator from [zenodo](https://zenodo.org/record/6802613), or [Baidu Netdisk Link](https://pan.baidu.com/s/1LrScKvcAXG6h3qsafeaKPw) with passcode: 'm1d8'.
+TotalSegmentator from [zenodo](https://zenodo.org/record/6802613), [Google Drive Link](https://drive.google.com/file/d/1JDtMissERwDw2ej-Cd_ABAslfNjy79Fc/view?usp=sharing) or [Baidu Netdisk Link](https://pan.baidu.com/s/1LrScKvcAXG6h3qsafeaKPw) with passcode: 'm1d8'.
 
 
 3. Train the model
@@ -45,7 +44,6 @@ Fully Supervised - CNN (2D UNet) -> [Paper Link](https://arxiv.org/pdf/1505.0459
 ```
 python train_fully_supervised_2D.py --root_path ../data/ACDC --exp ACDC/XXX --model XXX -max_iterations XXX -batch_size XXX --base_lr XXX --num_classes 4 --labeled_num XXX
 ```
-
 
 Fully Supervised - CNN (3D UNet) -> [Paper Link](https://arxiv.org/abs/1606.06650)
 ```
