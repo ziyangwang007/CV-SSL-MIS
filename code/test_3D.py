@@ -4,7 +4,7 @@ import shutil
 from glob import glob
 
 import torch
-
+from networks.net_factory_3d import net_factory_3d
 from networks.unet_3D import unet_3D
 from test_3D_util import test_all_case
 
@@ -24,7 +24,7 @@ def Inference(FLAGS):
     if os.path.exists(test_save_path):
         shutil.rmtree(test_save_path)
     os.makedirs(test_save_path)
-    net = unet_3D(n_classes=num_classes, in_channels=1).cuda()
+    net = net_factory_3d(net_type=args.model).cuda()
     save_mode_path = os.path.join(
         snapshot_path, '{}_best_model.pth'.format(FLAGS.model))
     net.load_state_dict(torch.load(save_mode_path))

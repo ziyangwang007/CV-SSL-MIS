@@ -8,10 +8,12 @@ Exploring CNN and ViT for Semi-Supervised Medical Image Segmentation
 
 ## News and To-do List
 - [x] Contrastive Learning
-- [x] Various Segmentation Backbone Networks 
-- [x] Various Semi-Supervised Frameworks 
+- [x] Various Segmentation Backbone Networks 3D UNETR, 3D SwinUNETR, 3D UNet, nnUNet ... 
 - [x] 3D UNETR
+- [x] 3D SwinUNETR
 - [x] 2D SwinUNet
+- [ ] 2D U-Mamba
+- [ ] 3D SegMamba
 - [ ] Totalsegmentor dataset
 
 ## Usage

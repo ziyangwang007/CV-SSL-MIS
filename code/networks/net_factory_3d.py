@@ -4,6 +4,7 @@ from networks.VoxResNet import VoxResNet
 from networks.attention_unet import Attention_UNet
 from networks.nnunet import initialize_network
 from networks.unetr import UNETR
+from monai.networks.nets import SwinUNETR
 
 
 def net_factory_3d(net_type="unet_3D", in_chns=1, class_num=2):
@@ -33,6 +34,8 @@ def net_factory_3d(net_type="unet_3D", in_chns=1, class_num=2):
                     conv_block=True,
                     res_block=True,
                     dropout_rate=0.0).cuda()
+    elif net_type == "swinunetr":
+        net = SwinUNETR(img_size=(64, 64, 64), in_channels=in_chns, out_channels=class_num, feature_size=48)
     else:
         net = None
     return net
